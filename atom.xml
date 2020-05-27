@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>佳铭同学的blog</title>
+  <title>Kind &amp; Lucky</title>
   
   <subtitle>Kind and Lucky</subtitle>
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2020-05-26T14:38:15.529Z</updated>
+  <updated>2020-05-27T07:33:15.480Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -20,8 +20,8 @@
     <title>first page</title>
     <link href="http://yoursite.com/2020/05/26/first-page/"/>
     <id>http://yoursite.com/2020/05/26/first-page/</id>
-    <published>2020-05-26T14:32:36.000Z</published>
-    <updated>2020-05-26T14:38:15.529Z</updated>
+    <published>2020-05-26T14:32:36.731Z</published>
+    <updated>2020-05-27T07:33:15.480Z</updated>
     
     <summary type="html">
     
@@ -29,13 +29,17 @@
       
         
         
-          &lt;h2 id=&quot;����&quot;&gt;&lt;a href=&quot;#����&quot; class=&quot;headerlink&quot; title=&quot;����&quot;&gt;&lt;/a&gt;����&lt;/h2&gt;&lt;h3 id=&quot;title&quot;&gt;&lt;a href=&quot;#title&quot; class=&quot;headerlink&quot;
+          &lt;h2 id=&quot;标题&quot;&gt;&lt;a href=&quot;#标题&quot; class=&quot;headerlink&quot; title=&quot;标题&quot;&gt;&lt;/a&gt;标题&lt;/h2&gt;&lt;h3 id=&quot;title&quot;&gt;&lt;a href=&quot;#title&quot; class=&quot;headerlink&quot;
         
       
     
     </summary>
     
     
+      <category term="aaa" scheme="http://yoursite.com/categories/aaa/"/>
+    
+    
+      <category term="随便写的" scheme="http://yoursite.com/tags/%E9%9A%8F%E4%BE%BF%E5%86%99%E7%9A%84/"/>
     
   </entry>
   
@@ -44,7 +48,7 @@
     <link href="http://yoursite.com/2020/05/26/hello-world/"/>
     <id>http://yoursite.com/2020/05/26/hello-world/</id>
     <published>2020-05-26T12:24:56.071Z</published>
-    <updated>2020-05-26T12:24:56.071Z</updated>
+    <updated>2020-05-27T07:32:16.508Z</updated>
     
     <summary type="html">
     
@@ -59,6 +63,10 @@
     </summary>
     
     
+      <category term="aaa" scheme="http://yoursite.com/categories/aaa/"/>
+    
+    
+      <category term="随便写的" scheme="http://yoursite.com/tags/%E9%9A%8F%E4%BE%BF%E5%86%99%E7%9A%84/"/>
     
   </entry>
   

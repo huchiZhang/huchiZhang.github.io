@@ -3,7 +3,13 @@
   <entry>
     <title>first page</title>
     <url>/2020/05/26/first-page/</url>
-    <content><![CDATA[<h2 id="����"><a href="#����" class="headerlink" title="����"></a>����</h2><h3 id="title"><a href="#title" class="headerlink" title="title"></a>title</h3>]]></content>
+    <content><![CDATA[<h2 id="标题"><a href="#标题" class="headerlink" title="标题"></a>标题</h2><h3 id="title"><a href="#title" class="headerlink" title="title"></a>title</h3>]]></content>
+      <categories>
+        <category>aaa</category>
+      </categories>
+      <tags>
+        <tag>随便写的</tag>
+      </tags>
   </entry>
   <entry>
     <title>Hello World</title>
@@ -22,5 +28,11 @@
 
 <p>More info: <a href="https://hexo.io/docs/one-command-deployment.html" target="_blank" rel="noopener">Deployment</a></p>
 ]]></content>
+      <categories>
+        <category>aaa</category>
+      </categories>
+      <tags>
+        <tag>随便写的</tag>
+      </tags>
   </entry>
 </search>
