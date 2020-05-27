@@ -1,39 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>imageTest</title>
-    <url>/2020/05/27/imageTest/</url>
-    <content><![CDATA[<h2 id="测试图片"><a href="#测试图片" class="headerlink" title="测试图片"></a>测试图片</h2><p><img src="/2020/05/27/imageTest/361.jpg" alt="BP"></p>
+    <title>leetcode-1</title>
+    <url>/2020/05/27/leetcode-1/</url>
+    <content><![CDATA[<h2 id="题目要求"><a href="#题目要求" class="headerlink" title="题目要求"></a>题目要求</h2><blockquote>
+<p>题目编号：350</p>
+<p>题目标题：两个数组的交集 Ⅱ</p>
+<p>说明：</p>
+<ul>
+<li>输出结果中每个元素出现的次数，应与元素在两个数组中出现的次数一致。</li>
+<li>我们可以不考虑输出结果的顺序。</li>
+</ul>
+<p>示例1：</p>
+<blockquote>
+<p>输入：nums1 = [1,2,2,1], nums2 = [2,2]</p>
+<p>输出：[2,2]</p>
+</blockquote>
+<p>示例2：</p>
+<blockquote>
+<p>输入：nums1 = [4,9,5], nums2 = [9,4,9,8,4]</p>
+<p>输出：[4,9]</p>
+</blockquote>
+</blockquote>
+<h2 id="题目解答"><a href="#题目解答" class="headerlink" title="题目解答"></a>题目解答</h2><h3 id="方法一-递归调用（自己写的算法）"><a href="#方法一-递归调用（自己写的算法）" class="headerlink" title="方法一     递归调用（自己写的算法）"></a>方法一     递归调用（自己写的算法）</h3><h4 id="算法："><a href="#算法：" class="headerlink" title="算法："></a>算法：</h4><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    nums = []</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">intersect</span><span class="params">(self, nums1: [int], nums2: [int])</span> -&gt; [int]:</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> nums1:</span><br><span class="line">            <span class="keyword">if</span> nums2[<span class="number">0</span>] == i:</span><br><span class="line">                nums1.remove(i)</span><br><span class="line">                self.nums.append(i)</span><br><span class="line">        nums2.pop(<span class="number">0</span>)</span><br><span class="line">        <span class="keyword">if</span> len(nums1) == <span class="number">0</span> <span class="keyword">or</span> len(nums2) == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> self.nums</span><br><span class="line">        <span class="keyword">return</span> self.intersect(nums1,nums2)</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="方法二-排序比较"><a href="#方法二-排序比较" class="headerlink" title="方法二    排序比较"></a>方法二    排序比较</h3><h4 id="算法：-1"><a href="#算法：-1" class="headerlink" title="算法："></a>算法：</h4><blockquote>
+<ul>
+<li>对数组 nums1 和 nums2 排序。</li>
+<li>初始化指针 i，j 和 k 为 0。</li>
+<li>指针 i 指向 nums1，指针 j 指向 nums2：<ul>
+<li>如果 nums1[i] &lt; nums2[j]，则 i++。</li>
+<li>如果 nums1[i] &gt; nums2[j]，则 j++。</li>
+<li>如果 nums1[i] == nums2[j]，将元素拷贝到 nums1[k]，且 i++，j++，k++。</li>
+</ul>
+</li>
+<li>返回数组 nums1 前 k 个元素。</li>
+</ul>
+</blockquote>
+<h4 id="图示："><a href="#图示：" class="headerlink" title="图示："></a>图示：</h4><p><img src="/2020/05/27/leetcode-1/2.png" alt="排序"></p>
+<h4 id="代码："><a href="#代码：" class="headerlink" title="代码："></a>代码：</h4><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">intersect</span><span class="params">(self, nums1: [int], nums2: [int])</span> -&gt; [int]:</span></span><br><span class="line">        nums1.sort()</span><br><span class="line">        nums2.sort()</span><br><span class="line">        r = []</span><br><span class="line">        left, right = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line">        <span class="keyword">while</span> left &lt; len(nums1) <span class="keyword">and</span> right &lt; len(nums2):</span><br><span class="line">            <span class="keyword">if</span> nums1[left] &lt; nums2[right]:</span><br><span class="line">                left += <span class="number">1</span></span><br><span class="line">            <span class="keyword">elif</span> nums1[left] == nums2[right]:</span><br><span class="line">                r.append(nums1[left])</span><br><span class="line">                left += <span class="number">1</span></span><br><span class="line">                right += <span class="number">1</span>    </span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                right += <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> r</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="方法三-哈希映射"><a href="#方法三-哈希映射" class="headerlink" title="方法三    哈希映射"></a>方法三    哈希映射</h3><h4 id="算法：-2"><a href="#算法：-2" class="headerlink" title="算法："></a>算法：</h4><blockquote>
+<ul>
+<li>如果 nums1 元素个数大于 nums2，则交换数组元素。</li>
+<li>对于 nums1 的每个元素，添加到 HashMap m 中，如果元素已经存在则增加对应的计数。</li>
+<li>初始化 k = 0，记录当前交集元素个数。</li>
+<li>遍历数组 nums2：<ul>
+<li>检查元素在 m 是否存在，若存在且计数为正：<ul>
+<li>将元素拷贝到 nums1[k]，且 k++。</li>
+<li>减少 m 中对应元素的计数。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>返回 nums1 前 k 个元素。</li>
+</ul>
+</blockquote>
+<h4 id="图示：-1"><a href="#图示：-1" class="headerlink" title="图示："></a>图示：</h4><p><img src="/2020/05/27/leetcode-1/1.png" alt="哈希映射"></p>
+<h4 id="程序："><a href="#程序：" class="headerlink" title="程序："></a>程序：</h4><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">intersect</span><span class="params">(self, nums1: [int], nums2: [int])</span> -&gt; [int]:</span></span><br><span class="line">        n1,n2=collections.Counter(nums1),collections.Counter(nums2)</span><br><span class="line">        res=[]</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> n1:</span><br><span class="line">            tmp=min(n1[i],n2[i])</span><br><span class="line">            <span class="keyword">while</span> tmp&gt;<span class="number">0</span>:</span><br><span class="line">                res.append(i)</span><br><span class="line">                tmp-=<span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> res</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="进阶问题"><a href="#进阶问题" class="headerlink" title="进阶问题"></a>进阶问题</h2><blockquote>
+<p>问题：</p>
+<ul>
+<li>如果给定的数组已经排好序呢？你将如何优化你的算法？</li>
+</ul>
+<p>我的答案：</p>
+<ul>
+<li>不需要优化，如果排好序了这个算法效果更好。</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>问题：</p>
+<ul>
+<li>如果 nums1 的大小比 nums2 小很多，哪种方法更优？</li>
+</ul>
+<p>我的答案：</p>
+<ul>
+<li>应该对算法进行优化，先比较一下两个数组的长度，每次循环比较小的数组。</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>问题：</p>
+<ul>
+<li>如果 nums2 的元素存储在磁盘上，磁盘内存是有限的，并且你不能一次加载所有的元素到内存中，你该怎么办？</li>
+</ul>
+<p>我的答案：</p>
+<ul>
+<li>分批加载执行</li>
+</ul>
+</blockquote>
 ]]></content>
+      <categories>
+        <category>leetcode</category>
+      </categories>
+      <tags>
+        <tag>leetcode</tag>
+        <tag>算法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>M-P模型</title>
+    <url>/2020/05/27/mp/</url>
+    <content><![CDATA[<h2 id="M-P模型（神经元模型）"><a href="#M-P模型（神经元模型）" class="headerlink" title="M-P模型（神经元模型）"></a>M-P模型（神经元模型）</h2><p>通过对生物神经元信息处理过程进行了简化和概括。M-P模型的神经元如图。</p>
+<p><img src="/2020/05/27/mp/1.png" alt="图1"></p>
+<h3 id="神经元的特性包括："><a href="#神经元的特性包括：" class="headerlink" title="神经元的特性包括："></a>神经元的特性包括：</h3><ol>
+<li>多输入单输出</li>
+<li>不同输入的权值不同</li>
+<li>每个神经元都具有阈值</li>
+<li>多个输入在处理体中进行累加，超过阈值输出1，小于阈值输出0。具体过程、公式表示如下图。</li>
+</ol>
+<p><img src="/2020/05/27/mp/2.png" alt="图2"></p>
+<p><img src="/2020/05/27/mp/3.png" alt="图3"></p>
+<h3 id="激活函数："><a href="#激活函数：" class="headerlink" title="激活函数："></a>激活函数：</h3><p>​        在处理体中判断累加和能否被激活的那个函数就是激活函数。上图中的激活函数就是sign()。具体概念如图。</p>
+<p><img src="/2020/05/27/mp/4.png" alt="图4"></p>
+<p>常见的激活函数如图：</p>
+<p><img src="/2020/05/27/mp/5.png" alt="图5"></p>
+]]></content>
+      <categories>
+        <category>神经网络</category>
+      </categories>
+      <tags>
+        <tag>神经网络</tag>
+        <tag>人工智能</tag>
+        <tag>机器学习</tag>
+      </tags>
   </entry>
   <entry>
     <title>first page</title>
     <url>/2020/05/26/first-page/</url>
     <content><![CDATA[<h2 id="标题"><a href="#标题" class="headerlink" title="标题"></a>标题</h2><h3 id="title"><a href="#title" class="headerlink" title="title"></a>title</h3>]]></content>
-      <categories>
-        <category>aaa</category>
-      </categories>
-      <tags>
-        <tag>随便写的</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2020/05/26/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-]]></content>
       <categories>
         <category>aaa</category>
       </categories>

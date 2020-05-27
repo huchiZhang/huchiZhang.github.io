@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2020-05-27T12:44:14.931Z</updated>
+  <updated>2020-05-27T15:36:02.412Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -17,11 +17,11 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>imageTest</title>
-    <link href="http://yoursite.com/2020/05/27/imageTest/"/>
-    <id>http://yoursite.com/2020/05/27/imageTest/</id>
-    <published>2020-05-27T12:41:25.000Z</published>
-    <updated>2020-05-27T12:44:14.931Z</updated>
+    <title>leetcode-1</title>
+    <link href="http://yoursite.com/2020/05/27/leetcode-1/"/>
+    <id>http://yoursite.com/2020/05/27/leetcode-1/</id>
+    <published>2020-05-27T14:58:01.000Z</published>
+    <updated>2020-05-27T15:36:02.412Z</updated>
     
     <summary type="html">
     
@@ -29,13 +29,52 @@
       
         
         
-          &lt;h2 id=&quot;测试图片&quot;&gt;&lt;a href=&quot;#测试图片&quot; class=&quot;headerlink&quot; title=&quot;测试图片&quot;&gt;&lt;/a&gt;测试图片&lt;/h2&gt;&lt;p&gt;&lt;img src=&quot;/2020/05/27/imageTest/361.jpg&quot;
+          &lt;h2 id=&quot;题目要求&quot;&gt;&lt;a href=&quot;#题目要求&quot; class=&quot;headerlink&quot; title=&quot;题目要求&quot;&gt;&lt;/a&gt;题目要求&lt;/h2&gt;&lt;blockquote&gt;
+&lt;p&gt;题目编号：350&lt;/p&gt;
+&lt;p&gt;题目标题：两个数组的交集
         
       
     
     </summary>
     
     
+      <category term="leetcode" scheme="http://yoursite.com/categories/leetcode/"/>
+    
+    
+      <category term="leetcode" scheme="http://yoursite.com/tags/leetcode/"/>
+    
+      <category term="算法" scheme="http://yoursite.com/tags/%E7%AE%97%E6%B3%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>M-P模型</title>
+    <link href="http://yoursite.com/2020/05/27/mp/"/>
+    <id>http://yoursite.com/2020/05/27/mp/</id>
+    <published>2020-05-27T14:02:12.000Z</published>
+    <updated>2020-05-27T14:44:39.258Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h2 id=&quot;M-P模型（神经元模型）&quot;&gt;&lt;a href=&quot;#M-P模型（神经元模型）&quot; class=&quot;headerlink&quot;
+        
+      
+    
+    </summary>
+    
+    
+      <category term="神经网络" scheme="http://yoursite.com/categories/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
+    
+    
+      <category term="神经网络" scheme="http://yoursite.com/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
+    
+      <category term="人工智能" scheme="http://yoursite.com/tags/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/"/>
+    
+      <category term="机器学习" scheme="http://yoursite.com/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
     
   </entry>
   
@@ -53,33 +92,6 @@
         
         
           &lt;h2 id=&quot;标题&quot;&gt;&lt;a href=&quot;#标题&quot; class=&quot;headerlink&quot; title=&quot;标题&quot;&gt;&lt;/a&gt;标题&lt;/h2&gt;&lt;h3 id=&quot;title&quot;&gt;&lt;a href=&quot;#title&quot; class=&quot;headerlink&quot;
-        
-      
-    
-    </summary>
-    
-    
-      <category term="aaa" scheme="http://yoursite.com/categories/aaa/"/>
-    
-    
-      <category term="随便写的" scheme="http://yoursite.com/tags/%E9%9A%8F%E4%BE%BF%E5%86%99%E7%9A%84/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Hello World</title>
-    <link href="http://yoursite.com/2020/05/26/hello-world/"/>
-    <id>http://yoursite.com/2020/05/26/hello-world/</id>
-    <published>2020-05-26T12:24:56.071Z</published>
-    <updated>2020-05-27T07:32:16.508Z</updated>
-    
-    <summary type="html">
-    
-      
-      
-        
-        
-          &lt;p&gt;Welcome to &lt;a href=&quot;https://hexo.io/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;Hexo&lt;/a&gt;! This is your very first post. Check &lt;a
         
       
     
