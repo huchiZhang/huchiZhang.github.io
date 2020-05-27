@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>佳铭同学的blog</title>
+  
+  <subtitle>Kind and Lucky</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://yoursite.com/"/>
+  <updated>2020-05-26T14:38:15.529Z</updated>
+  <id>http://yoursite.com/</id>
+  
+  <author>
+    <name>JM Zhang</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>first page</title>
+    <link href="http://yoursite.com/2020/05/26/first-page/"/>
+    <id>http://yoursite.com/2020/05/26/first-page/</id>
+    <published>2020-05-26T14:32:36.000Z</published>
+    <updated>2020-05-26T14:38:15.529Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h2 id=&quot;����&quot;&gt;&lt;a href=&quot;#����&quot; class=&quot;headerlink&quot; title=&quot;����&quot;&gt;&lt;/a&gt;����&lt;/h2&gt;&lt;h3 id=&quot;title&quot;&gt;&lt;a href=&quot;#title&quot; class=&quot;headerlink&quot;
+        
+      
+    
+    </summary>
+    
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Hello World</title>
+    <link href="http://yoursite.com/2020/05/26/hello-world/"/>
+    <id>http://yoursite.com/2020/05/26/hello-world/</id>
+    <published>2020-05-26T12:24:56.071Z</published>
+    <updated>2020-05-26T12:24:56.071Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;Welcome to &lt;a href=&quot;https://hexo.io/&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;Hexo&lt;/a&gt;! This is your very first post. Check &lt;a
+        
+      
+    
+    </summary>
+    
+    
+    
+  </entry>
+  
+</feed>
