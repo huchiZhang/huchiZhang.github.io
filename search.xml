@@ -1,6 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Untitled 3</title>
+    <url>/2020/06/09/Untitled%203/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>tensorflow-1</title>
+    <url>/2020/06/09/tensorflow-1/</url>
+    <content><![CDATA[<h2 id="tensorflow学习笔记"><a href="#tensorflow学习笔记" class="headerlink" title="tensorflow学习笔记"></a>tensorflow学习笔记</h2><h3 id="Tensorflow框架介绍"><a href="#Tensorflow框架介绍" class="headerlink" title="Tensorflow框架介绍"></a>Tensorflow框架介绍</h3><h4 id="1-1-TF数据流图"><a href="#1-1-TF数据流图" class="headerlink" title="1.1 TF数据流图"></a>1.1 TF数据流图</h4><h5 id="Tensorflow结构分析"><a href="#Tensorflow结构分析" class="headerlink" title="Tensorflow结构分析"></a>Tensorflow结构分析</h5><blockquote>
+<p>构建图阶段:建立流程图，包括定义数据（张量Tensor）和操作（节点Op）</p>
+<p>执行图阶段：调用各方资源，将定义好的数据和操作运行起来</p>
+</blockquote>
+<p>举例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tensorflow_dome</span><span class="params">()</span>:</span></span><br><span class="line"><span class="comment">#     原生python加法运算</span></span><br><span class="line">     a = <span class="number">2</span></span><br><span class="line">     b = <span class="number">3</span></span><br><span class="line">     c = a + b</span><br><span class="line">     print(<span class="string">"普通加法结果：\n"</span>,c)</span><br><span class="line">     </span><br><span class="line"><span class="comment">#     tensorflow 加法</span></span><br><span class="line">     a_t = tf.constant(<span class="number">2</span>)</span><br><span class="line">     b_t = tf.constant(<span class="number">3</span>)</span><br><span class="line">     c_t = a_t + b_t</span><br><span class="line">     print(<span class="string">"Tensorflow加法运算的结果：\n"</span>,c_t)</span><br><span class="line">     </span><br><span class="line"><span class="comment">#     开启会话</span></span><br><span class="line">     <span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">         c_t_value = sess.run(c_t)</span><br><span class="line">         print(c_t_value)</span><br><span class="line">         </span><br><span class="line">     <span class="keyword">return</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200609153842522.png" alt="image-20200609153842522"></p>
+<h4 id="1-2-图与TensorBoard"><a href="#1-2-图与TensorBoard" class="headerlink" title="1.2 图与TensorBoard"></a>1.2 图与TensorBoard</h4><h5 id="什么是图结构"><a href="#什么是图结构" class="headerlink" title="什么是图结构"></a>什么是图结构</h5><p>图包含了一组tf.Operation代表的计算单元对象和tf.Tensor代表的计算单元之间流动的数据。</p>
+<h5 id="图相关操作"><a href="#图相关操作" class="headerlink" title="图相关操作"></a>图相关操作</h5><p> <strong>默认图</strong></p>
+<p> 查看默认图的两种方法：</p>
+<ul>
+<li><p>通过调用tf.get_default_graph()访问，要将操作添加到默认图形中，直接创建OP即可。</p>
+</li>
+<li><p>op、sess都含有graph属性，默认都在一张图中。</p>
+<p>举例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">graph_demo</span><span class="params">()</span>:</span></span><br><span class="line"><span class="comment">#    图的演示</span></span><br><span class="line">     a_t = tf.constant(<span class="number">2</span>)</span><br><span class="line">     b_t = tf.constant(<span class="number">3</span>)</span><br><span class="line">     c_t = a_t + b_t</span><br><span class="line">     </span><br><span class="line"><span class="comment">#     查看默认图</span></span><br><span class="line"><span class="comment">#     方法一：调用方法</span></span><br><span class="line">     default_g = tf.get_default_graph()</span><br><span class="line">     print(<span class="string">"default_g:\n"</span>,default_g)</span><br><span class="line"><span class="comment">#     方法二：查看属性</span></span><br><span class="line">     print(<span class="string">"a_t的图属性"</span>,a_t.graph)</span><br><span class="line"></span><br><span class="line"><span class="comment">#     开启会话</span></span><br><span class="line">     <span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">         c_t_value = sess.run(c_t)</span><br><span class="line">         print(<span class="string">"c_t_value："</span>,c_t_value)</span><br><span class="line">         print(<span class="string">"sess图属性："</span>,sess.graph)</span><br><span class="line">         </span><br><span class="line">     <span class="keyword">return</span> <span class="number">0</span></span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p> <strong>创建图</strong></p>
+<p> 可以通过tf.Graph()自定义创建图</p>
+<p> 举例：</p>
+ <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">graph_demo2</span><span class="params">()</span>:</span></span><br><span class="line"><span class="comment">#    自定义图</span></span><br><span class="line">    new_g = tf.Graph()</span><br><span class="line"><span class="comment">#    在图中定义数据和操作</span></span><br><span class="line">    <span class="keyword">with</span> new_g.as_default():</span><br><span class="line">        a_new = tf.constant(<span class="number">20</span>)</span><br><span class="line">        b_new = tf.constant(<span class="number">30</span>)</span><br><span class="line">        c_new = a_new + b_new</span><br><span class="line">        print(<span class="string">"c_new:\n"</span>,c_new)</span><br><span class="line"> <span class="comment">#     开启会话</span></span><br><span class="line">    <span class="keyword">with</span> tf.Session(graph=new_g) <span class="keyword">as</span> new_sess:</span><br><span class="line">        c_new_value = new_sess.run(c_new)</span><br><span class="line">        print(<span class="string">"c_t_value："</span>,c_new_value)</span><br><span class="line">        print(<span class="string">"sess图属性："</span>,new_sess.graph)</span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="TensorBoard：可视化学习"><a href="#TensorBoard：可视化学习" class="headerlink" title="TensorBoard：可视化学习"></a>TensorBoard：可视化学习</h5><p> <strong>1. 数据序列化-events文件</strong></p>
+<p> 运行代码将图序列化到本地，生成一个events文件</p>
+ <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tf.summary.FileWriter(path,graph&#x3D;sess.graph)</span><br></pre></td></tr></table></figure>
+
+<p> <strong>2. 启动TensorBoard</strong></p>
+<p> 运行命令生成图，再在浏览器输入127.0.0.1:6006查看。</p>
+ <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tensorboard --logdir&#x3D;&quot;.&#x2F;tmp&#x2F;summary&#x2F;&quot;</span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="OP（operation）"><a href="#OP（operation）" class="headerlink" title="OP（operation）"></a>OP（operation）</h5><p>常见OP：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200609181148718.png" alt="image-20200609181148718"></p>
+<p>每一个图一个命名空间</p>
+<h4 id="1-3-会话"><a href="#1-3-会话" class="headerlink" title="1.3 会话"></a>1.3 会话</h4><p>会话是一个运行Tensorflow operation的类，开启方式主要包括两种</p>
+<ol>
+<li><p>tf.Session:用于完整的程序中</p>
+</li>
+<li><p>tf.InteractiveSession：用于交互式上下文中，例如再cmd中打开运行以后就可以直接交互式的运行。</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200609182000166.png" alt="image-20200609182000166"></p>
+</li>
+</ol>
+<h5 id="创建会话初始化的参数、"><a href="#创建会话初始化的参数、" class="headerlink" title="创建会话初始化的参数、"></a>创建会话初始化的参数、</h5><ol>
+<li><p>会话掌握资源，用完要回收。</p>
+</li>
+<li><p>初始化会话对象的参数：</p>
+<ul>
+<li>graph = None</li>
+<li>target：如果设置为空，会话将使用本地计算机中的设备。还可以指定网址，一遍指定tensorflow服务器地址。</li>
+<li>config：本参数允许指定一个tf.ConfigProto，以便控制会话的行为。</li>
+</ul>
+</li>
+</ol>
+<h5 id="会话的run"><a href="#会话的run" class="headerlink" title="会话的run()"></a>会话的run()</h5><ul>
+<li>run(fetches,feed_dict=none,options=None,run_metadata=none)<ul>
+<li>通过sess.run()运行operation</li>
+<li>detches：单一的operation，或者列表、元祖</li>
+<li>feed_dict：与tf.placeholder配合使用，运行时赋值使用<ul>
+<li>placeholder提供占位符，run的时候通过feed_dict指定参数</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>例子：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">feed_demo</span><span class="params">()</span>:</span></span><br><span class="line"><span class="comment">#    图的演示</span></span><br><span class="line">     a_t = tf.placeholder(tf.float32)</span><br><span class="line">     b_t = tf.placeholder(tf.float32)</span><br><span class="line">     c_t = a_t + b_t</span><br><span class="line"></span><br><span class="line"><span class="comment">#     开启会话</span></span><br><span class="line">     <span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">         c_t_value = sess.run(c_t,feed_dict=&#123;a_t:<span class="number">1</span>,b_t:<span class="number">2</span>&#125;)</span><br><span class="line">         print(<span class="string">"c_t_value："</span>,c_t_value)</span><br></pre></td></tr></table></figure>
+
+<p>运行结果</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200609203435131.png" alt="image-20200609203435131"></p>
+<h4 id="1-4-张量"><a href="#1-4-张量" class="headerlink" title="1.4 张量"></a>1.4 张量</h4><h5 id="张量"><a href="#张量" class="headerlink" title="张量"></a>张量</h5><p>tensorflow就是一个n维数组，类型为tf.Tensor。</p>
+<blockquote>
+<p>张量在计算机中怎么存储？</p>
+<p>标量  一个数字</p>
+<p>数组  一维数组</p>
+<p>矩阵  二维数组</p>
+<p>张量  n维数组</p>
+</blockquote>
+<p><strong>张量的类型</strong></p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200609211541820.png" alt="image-20200609211541820"></p>
+<p><strong>张量的阶</strong></p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200609211628549.png" alt="image-20200609211628549"></p>
+<p>例子：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tensor_demo</span><span class="params">()</span>:</span></span><br><span class="line"><span class="comment">#    张量的演示</span></span><br><span class="line">    tensor1 = tf.constant(<span class="number">4.0</span>)</span><br><span class="line">    tensor2 = tf.constant([<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>])</span><br><span class="line">    linear_square = tf.constant([[<span class="number">4</span>],[<span class="number">9</span>],[<span class="number">16</span>],[<span class="number">25</span>]],dtype=tf.int32)</span><br><span class="line">    </span><br><span class="line">    print(<span class="string">"tensor1:"</span>,tensor1)</span><br><span class="line">    print(<span class="string">"tensor2:"</span>,tensor2)</span><br><span class="line">    print(<span class="string">"linear_square:"</span>,linear_square)</span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200609212425728.png" alt="image-20200609212425728"></p>
+<p><strong>张量的变换</strong></p>
+<ul>
+<li>类型改变</li>
+</ul>
+<p><img src="/2020/06/09/tensorflow-1/image-20200609230835007.png" alt="image-20200609230835007"></p>
+<blockquote>
+<p>和ndarray属性修改对比：</p>
+<ol>
+<li><p>ndarray.astype(type)</p>
+<p>tf.cast(tensor,dtype)</p>
+<p>​    不会修改原始的tensor，返回新的改变类型后的tensor</p>
+</li>
+<li><p>ndarray.tostring</p>
+</li>
+</ol>
+</blockquote>
+<ul>
+<li><p>形状改变</p>
+<ul>
+<li><p>静态形状：初始创建张量时的形状</p>
+<p>如何改变静态形状？</p>
+<blockquote>
+<p>什么情况下才可以改变/更新静态形状？</p>
+<p>在形状还没有完全固定下来额时候 </p>
+</blockquote>
+<p>tensor.set_shape()</p>
+<p>只能更新形状没确定部分。</p>
+</li>
+<li><p>动态形状</p>
+<ul>
+<li>可能随意改变形状，但是数据总量不能改变。</li>
+<li>tf.reshape(tensor,shape )<ul>
+<li>不会改变原始的tensor</li>
+<li>返回新的改变形状后的tensor</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>例子：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">a_t = tf.placeholder(tf.float32,shape=[<span class="literal">None</span>,<span class="literal">None</span>])</span><br><span class="line">    b_t = tf.placeholder(tf.float32,shape=[<span class="literal">None</span>,<span class="number">10</span>])</span><br><span class="line"><span class="comment">#    形状确定的</span></span><br><span class="line">    c_t = tf.placeholder(tf.float32,shape=[<span class="number">3</span>,<span class="number">2</span>])</span><br><span class="line">    </span><br><span class="line">    print(<span class="string">"a_t:"</span>,a_t)</span><br><span class="line">    print(<span class="string">"b_t:"</span>,b_t)</span><br><span class="line">    print(<span class="string">"c_t:"</span>,c_t)</span><br><span class="line"><span class="comment">#   修改静态形状</span></span><br><span class="line">    b_t.set_shape([<span class="number">2</span>,<span class="number">10</span>])</span><br><span class="line"><span class="comment">#    修改动态形状</span></span><br><span class="line">    tf.reshape(c_t,shape=[<span class="number">2</span>,<span class="number">3</span>,<span class="number">1</span>])</span><br><span class="line">    print(<span class="string">"b_t:"</span>,b_t)</span><br><span class="line">    print(<span class="string">"c_t:"</span>,c_t)</span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200609235623814.png" alt="image-20200609235623814"></p>
+]]></content>
+  </entry>
+  <entry>
     <title>paperNote1</title>
     <url>/2020/06/06/paperNote1/</url>
     <content><![CDATA[<blockquote>
