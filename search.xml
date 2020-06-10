@@ -1,14 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Untitled 3</title>
-    <url>/2020/06/09/Untitled%203/</url>
-    <content><![CDATA[]]></content>
-  </entry>
-  <entry>
-    <title>tensorflow-1</title>
+    <title>Tensorflow框架介绍</title>
     <url>/2020/06/09/tensorflow-1/</url>
-    <content><![CDATA[<h2 id="tensorflow学习笔记"><a href="#tensorflow学习笔记" class="headerlink" title="tensorflow学习笔记"></a>tensorflow学习笔记</h2><h3 id="Tensorflow框架介绍"><a href="#Tensorflow框架介绍" class="headerlink" title="Tensorflow框架介绍"></a>Tensorflow框架介绍</h3><h4 id="1-1-TF数据流图"><a href="#1-1-TF数据流图" class="headerlink" title="1.1 TF数据流图"></a>1.1 TF数据流图</h4><h5 id="Tensorflow结构分析"><a href="#Tensorflow结构分析" class="headerlink" title="Tensorflow结构分析"></a>Tensorflow结构分析</h5><blockquote>
+    <content><![CDATA[<h3 id="Tensorflow框架介绍"><a href="#Tensorflow框架介绍" class="headerlink" title="Tensorflow框架介绍"></a>Tensorflow框架介绍</h3><h4 id="1-1-TF数据流图"><a href="#1-1-TF数据流图" class="headerlink" title="1.1 TF数据流图"></a>1.1 TF数据流图</h4><h5 id="Tensorflow结构分析"><a href="#Tensorflow结构分析" class="headerlink" title="Tensorflow结构分析"></a>Tensorflow结构分析</h5><blockquote>
 <p>构建图阶段:建立流程图，包括定义数据（张量Tensor）和操作（节点Op）</p>
 <p>执行图阶段：调用各方资源，将定义好的数据和操作运行起来</p>
 </blockquote>
@@ -146,10 +141,110 @@
 
 <p>运行结果：</p>
 <p><img src="/2020/06/09/tensorflow-1/image-20200609235623814.png" alt="image-20200609235623814"></p>
+<h4 id="1-5-API"><a href="#1-5-API" class="headerlink" title="1.5 API"></a>1.5 API</h4><h5 id="基础API"><a href="#基础API" class="headerlink" title="基础API"></a>基础API</h5><ul>
+<li><strong>tf.app</strong>:相当于为tensorflow提供的一个main函数</li>
+<li><strong>tf.image</strong>:图像处理的操作。</li>
+<li><strong>tf.gfile</strong>:文件操作函数。</li>
+<li><strong>tf.summary</strong>:用来生成TensorBoard可用的统计日志</li>
+<li><strong>tf.python_io</strong>:数据读取</li>
+<li><strong>tf.train</strong>：提供一些训练器</li>
+<li><strong>tf.nn</strong>:一些构建神经网络的底层函数</li>
+</ul>
+<h5 id="高级API"><a href="#高级API" class="headerlink" title="高级API"></a>高级API</h5><p><strong>tf.keras</strong>:本来是一个独立的深度学习库，tf用来快速构建模型。</p>
+<p><strong>tf.layers</strong>:以更高级的概念定义一个模型</p>
+<p><strong>tf.contrib</strong>：构建计算图的高级操作。</p>
+<p><strong>tf.estimator</strong>:相当于构建模型、训练、评价的合体</p>
+<h5 id="api层次划分"><a href="#api层次划分" class="headerlink" title="api层次划分"></a>api层次划分</h5><p><img src="/2020/06/09/tensorflow-1/image-20200610072817901.png" alt="image-20200610072817901"></p>
+<h4 id="1-6-案例：实现线性回归的训练"><a href="#1-6-案例：实现线性回归的训练" class="headerlink" title="1.6 案例：实现线性回归的训练"></a>1.6 案例：实现线性回归的训练</h4><p>一次函数的线性回归，随机指定一百个点</p>
+<p>代码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">linear_regression</span><span class="params">()</span>:</span></span><br><span class="line"><span class="comment">#    实现一个线性回归</span></span><br><span class="line"><span class="comment">#    1. 准备数据</span></span><br><span class="line">    X = tf.random_normal(shape=[<span class="number">100</span>,<span class="number">1</span>])</span><br><span class="line">    y_true = tf.matmul(X,[[<span class="number">0.8</span>]]) + <span class="number">0.6</span></span><br><span class="line"><span class="comment">#    2.构建模型</span></span><br><span class="line">    weight = tf.Variable(initial_value=tf.random_normal(shape=[<span class="number">1</span>,<span class="number">1</span>]))</span><br><span class="line">    bias = tf.Variable(initial_value=tf.random_normal(shape=[<span class="number">1</span>,<span class="number">1</span>]))</span><br><span class="line">    y_predict = tf.matmul(X,weight) + bias</span><br><span class="line"><span class="comment">#    3.构建损失函数</span></span><br><span class="line">    error = tf.reduce_mean(tf.square(y_predict - y_true))</span><br><span class="line"><span class="comment">#    4.优化损失</span></span><br><span class="line">    optimizer = tf.train.GradientDescentOptimizer(<span class="number">0.01</span>).minimize(error)</span><br><span class="line">    </span><br><span class="line">    init = tf.global_variables_initializer()</span><br><span class="line">    <span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">        sess.run(init)</span><br><span class="line">        print(<span class="string">"训练前模型参数为：权重%f 偏置%f 损失%f"</span>%(weight.eval(),bias.eval(),error.eval()))</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">1000</span>):</span><br><span class="line">            sess.run(optimizer)</span><br><span class="line">        print(<span class="string">"训练后模型参数为：权重%f 偏置%f 损失%f"</span>%(weight.eval(),bias.eval(),error.eval()))</span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200610102402102.png" alt="image-20200610102402102"></p>
+<h4 id="1-7-需要注意的问题"><a href="#1-7-需要注意的问题" class="headerlink" title="1.7 需要注意的问题"></a>1.7 需要注意的问题</h4><h5 id="学习率的设置、步数的设置与梯度爆炸"><a href="#学习率的设置、步数的设置与梯度爆炸" class="headerlink" title="学习率的设置、步数的设置与梯度爆炸"></a>学习率的设置、步数的设置与梯度爆炸</h5><p>学习率越大，训练到较好结果的步数越小；学习率越小，训练到较好结果的步数越大。</p>
+<p>学习率过大会导致梯度爆炸的情况。</p>
+<blockquote>
+<p>在极端情况下，权重的值变得非常大，以至于溢出导致NaN.</p>
+<p>如何解决梯度爆炸问题？</p>
+<ol>
+<li>重新设计网络</li>
+<li>调整学习率</li>
+<li>使用梯度阶段（在训练过程中检查和限制梯度的大小）</li>
+<li>使用激活函数</li>
+</ol>
+</blockquote>
+<p><strong>trainable属性</strong></p>
+<p>在定义变量时属性可以规定本trainable数据是否可以训练。</p>
+<h4 id="1-8-案例改进"><a href="#1-8-案例改进" class="headerlink" title="1.8 案例改进"></a>1.8 案例改进</h4><p>对案例在三方面进行了改进，分别是增加变量显示，增加命名空间、模型的保存与加载。</p>
+<ul>
+<li><p>增加变量显示</p>
+<ol>
+<li>创建事件文件</li>
+<li>收集变量</li>
+<li>合并变量</li>
+<li>每次迭代运行一次合并变量</li>
+<li>每次迭代将summary对象写入事件文件</li>
+</ol>
+</li>
+<li><p>增加命名空间</p>
+<ul>
+<li>为每个部分增加命名空间可以在tensorboard里更清楚地观察模型</li>
+</ul>
+</li>
+<li><p>模型的保存与加载</p>
+<ol>
+<li><p>实例化Saver</p>
+</li>
+<li><p>保存（在训练迭代过程中对会话进行保存）</p>
+<p>saver.save(sess,path)</p>
+</li>
+<li><p>加载（对会话进行加载）</p>
+<p>先判断模型是否存在，存在再进行加载。</p>
+</li>
+</ol>
+</li>
+</ul>
+<p>代码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">linear_regression</span><span class="params">()</span>:</span></span><br><span class="line"><span class="comment">#    实现一个线性回归</span></span><br><span class="line">    <span class="keyword">with</span> tf.variable_scope(<span class="string">"prepare_data"</span>):</span><br><span class="line">    <span class="comment">#    1. 准备数据</span></span><br><span class="line">        X = tf.random_normal(shape=[<span class="number">100</span>,<span class="number">1</span>],name=<span class="string">"feature"</span>)</span><br><span class="line">        y_true = tf.matmul(X,[[<span class="number">0.8</span>]]) + <span class="number">0.6</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">with</span> tf.variable_scope(<span class="string">"create_model"</span>):</span><br><span class="line">    <span class="comment">#    2.构建模型</span></span><br><span class="line">        weight = tf.Variable(initial_value=tf.random_normal(shape=[<span class="number">1</span>,<span class="number">1</span>]),name=<span class="string">"Weights"</span>)</span><br><span class="line">        bias = tf.Variable(initial_value=tf.random_normal(shape=[<span class="number">1</span>,<span class="number">1</span>]),name=<span class="string">"bias"</span>)</span><br><span class="line">        y_predict = tf.matmul(X,weight) + bias</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">with</span> tf.variable_scope(<span class="string">"loss_function"</span>):</span><br><span class="line">    <span class="comment">#    3.构建损失函数</span></span><br><span class="line">        error = tf.reduce_mean(tf.square(y_predict - y_true))</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">with</span> tf.variable_scope(<span class="string">"optimizer"</span>):</span><br><span class="line">    <span class="comment">#    4.优化损失</span></span><br><span class="line">        optimizer = tf.train.GradientDescentOptimizer(<span class="number">0.01</span>).minimize(error)</span><br><span class="line">    </span><br><span class="line"><span class="comment">#    2_收集变量</span></span><br><span class="line"><span class="comment">#    scalar用来收集</span></span><br><span class="line">    tf.summary.scalar(<span class="string">"error"</span>,error)</span><br><span class="line">    tf.summary.histogram(<span class="string">"weights"</span>,weight)</span><br><span class="line">    tf.summary.histogram(<span class="string">"bias"</span>,bias)</span><br><span class="line">    </span><br><span class="line"><span class="comment">#    3_合并变量</span></span><br><span class="line">    merged = tf.summary.merge_all()</span><br><span class="line"> </span><br><span class="line"><span class="comment">#    创建实例化Saver</span></span><br><span class="line">    saver = tf.train.Saver()</span><br><span class="line">    </span><br><span class="line"><span class="comment">#    初始化所有数据</span></span><br><span class="line">    init = tf.global_variables_initializer()</span><br><span class="line">    </span><br><span class="line"><span class="comment">#    开始会话</span></span><br><span class="line">    <span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line"><span class="comment">#        初始化变量</span></span><br><span class="line">        sess.run(init)</span><br><span class="line">        </span><br><span class="line"><span class="comment">#        1_创建事件文件</span></span><br><span class="line">        file_writer = tf.summary.FileWriter(<span class="string">"./tmp/linear"</span>,graph=sess.graph)</span><br><span class="line">        </span><br><span class="line">        print(<span class="string">"训练前模型参数为：权重%f 偏置%f 损失%f"</span>%(weight.eval(),bias.eval(),error.eval()))</span><br><span class="line"><span class="comment">#        开始训练</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">100</span>):</span><br><span class="line">            sess.run(optimizer)</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 运行合并操作</span></span><br><span class="line">            summary = sess.run(merged)</span><br><span class="line">            <span class="comment"># 将每次迭代后的</span></span><br><span class="line">            file_writer.add_summary(summary,i)</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 保存模型</span></span><br><span class="line">            <span class="keyword">if</span> i % <span class="number">10</span> == <span class="number">0</span>:</span><br><span class="line">                saver.save(sess,<span class="string">"./tmp/model/my_linear.ckpt"</span>)</span><br><span class="line">            </span><br><span class="line">            </span><br><span class="line">        print(<span class="string">"训练后模型参数为：权重%f 偏置%f 损失%f"</span>%(weight.eval(),bias.eval(),error.eval()))</span><br></pre></td></tr></table></figure>
+
+<p>增加命名空间后生成的tensorboard图：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200610171639402.png" alt="image-20200610171639402"></p>
+<p>模型保存后生成的文件如图，里面没有具体的ckpt文件</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200610171914326.png" alt="image-20200610171914326"></p>
+<p>加载模型只需把原有训练模型的位置改为下面的代码</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> os.path.exists(<span class="string">"./tmp/model/checkpoint"</span>):</span><br><span class="line">    saver.restore(sess,<span class="string">"./tmp/model/my_linear.ckpt"</span>)</span><br></pre></td></tr></table></figure>
+
+<p>加载后运行结果：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200610172424010.png" alt="image-20200610172424010"></p>
+<h4 id="1-9-命令行参数使用"><a href="#1-9-命令行参数使用" class="headerlink" title="1.9 命令行参数使用"></a>1.9 命令行参数使用</h4><ol>
+<li><p>通过tf.app.flags定义从命令行接受的参数</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200610174302834.png" alt="image-20200610174302834"></p>
+</li>
+<li><p>简化变量名</p>
+</li>
+</ol>
+<p>例子：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200610174432963.png" alt="image-20200610174432963"></p>
+<p>运行：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200610174450754.png" alt="image-20200610174450754"></p>
+<p>命令行运行：</p>
+<p><img src="/2020/06/09/tensorflow-1/image-20200610174536346.png" alt="image-20200610174536346"></p>
+<blockquote>
+<p><strong>tf.app.run函数</strong></p>
+<p>tf.app.run()会自动调用程序中的main(argv)函数</p>
+</blockquote>
 ]]></content>
+      <categories>
+        <category>机器学习笔记</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>学习笔记</tag>
+        <tag>Tensorflow</tag>
+      </tags>
   </entry>
   <entry>
-    <title>paperNote1</title>
+    <title>基于矩阵操作的必然性QoS约束副本放置方法 笔记</title>
     <url>/2020/06/06/paperNote1/</url>
     <content><![CDATA[<blockquote>
 <p>论文名称：基于矩阵操作的必然性QoS约束副本放置方法</p>
@@ -200,13 +295,16 @@
 <h5 id="加权向量（WV）"><a href="#加权向量（WV）" class="headerlink" title="加权向量（WV）"></a>加权向量（WV）</h5><p>加权向量是指每个属性在QoS约束中所占的比重。</p>
 <p><img src="/2020/06/06/paperNote1/image-20200606234618642.png" alt="image-20200606234618642"></p>
 <h5 id="服务质量矩阵（DM）"><a href="#服务质量矩阵（DM）" class="headerlink" title="服务质量矩阵（DM）"></a>服务质量矩阵（DM）</h5>]]></content>
+      <categories>
+        <category>论文笔记</category>
+      </categories>
       <tags>
         <tag>论文笔记</tag>
         <tag>副本放置</tag>
       </tags>
   </entry>
   <entry>
-    <title>bayes-3</title>
+    <title>贝叶斯网络3 贝叶斯网络</title>
     <url>/2020/06/04/bayes-3/</url>
     <content><![CDATA[<h2 id="贝叶斯计算"><a href="#贝叶斯计算" class="headerlink" title="贝叶斯计算"></a>贝叶斯计算</h2><h3 id="贝叶斯网络"><a href="#贝叶斯网络" class="headerlink" title="贝叶斯网络"></a>贝叶斯网络</h3><h4 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h4><h5 id="独立"><a href="#独立" class="headerlink" title="独立"></a>独立</h5><blockquote>
 <p>事件X和Y相互独立，则</p>
@@ -249,18 +347,28 @@
 <p><img src="/2020/06/04/bayes-3/image-20200604094422795.png" alt="image-20200604094422795"></p>
 </blockquote>
 <h4 id="例题-1"><a href="#例题-1" class="headerlink" title="例题"></a>例题</h4>]]></content>
-  </entry>
-  <entry>
-    <title>贝叶斯网络 - 2</title>
-    <url>/2020/05/31/bayes-2/</url>
-    <content><![CDATA[<h2 id="贝叶斯公式"><a href="#贝叶斯公式" class="headerlink" title="贝叶斯公式"></a>贝叶斯公式</h2>]]></content>
+      <categories>
+        <category>机器学习笔记</category>
+      </categories>
       <tags>
         <tag>机器学习</tag>
         <tag>贝叶斯网络</tag>
       </tags>
   </entry>
   <entry>
-    <title>贝叶斯网络 - 1</title>
+    <title>贝叶斯网络2 贝叶斯公式</title>
+    <url>/2020/05/31/bayes-2/</url>
+    <content><![CDATA[<h2 id="贝叶斯公式"><a href="#贝叶斯公式" class="headerlink" title="贝叶斯公式"></a>贝叶斯公式</h2>]]></content>
+      <categories>
+        <category>机器学习笔记</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>贝叶斯网络</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>贝叶斯网络1 概率基础</title>
     <url>/2020/05/31/nayes-1/</url>
     <content><![CDATA[<h2 id="概率基础"><a href="#概率基础" class="headerlink" title="概率基础"></a>概率基础</h2><h3 id="随机试验和随机事件"><a href="#随机试验和随机事件" class="headerlink" title="随机试验和随机事件"></a>随机试验和随机事件</h3><p>所涉及的基本概念：</p>
 <blockquote>
@@ -315,6 +423,9 @@
 <p>举例：</p>
 <p><img src="/2020/05/31/nayes-1/image-20200531164542739.png" alt="image-20200531164542739"></p>
 ]]></content>
+      <categories>
+        <category>机器学习笔记</category>
+      </categories>
       <tags>
         <tag>机器学习</tag>
         <tag>贝叶斯网络</tag>
@@ -354,7 +465,7 @@
       </tags>
   </entry>
   <entry>
-    <title>神经网络模型</title>
+    <title>神经网络笔记2 神经网络模型</title>
     <url>/2020/05/28/networkModel/</url>
     <content><![CDATA[<h2 id="神经网络笔记2-–-神经网络模型"><a href="#神经网络笔记2-–-神经网络模型" class="headerlink" title="神经网络笔记2 – 神经网络模型"></a>神经网络笔记2 – 神经网络模型</h2><h3 id="分类"><a href="#分类" class="headerlink" title="分类"></a>分类</h3><p>神经网络的具体分类如图：</p>
 <p><img src="/2020/05/28/networkModel/1.png" alt="分类"></p>
@@ -387,7 +498,7 @@
 </blockquote>
 ]]></content>
       <categories>
-        <category>神经网络笔记</category>
+        <category>机器学习笔记</category>
       </categories>
       <tags>
         <tag>神经网络</tag>
@@ -560,7 +671,7 @@
       </tags>
   </entry>
   <entry>
-    <title>M-P模型</title>
+    <title>神经网络笔记1 M-P模型</title>
     <url>/2020/05/27/mp/</url>
     <content><![CDATA[<h2 id="神经网络笔记1-–-M-P模型（神经元模型）"><a href="#神经网络笔记1-–-M-P模型（神经元模型）" class="headerlink" title="神经网络笔记1 – M-P模型（神经元模型）"></a>神经网络笔记1 – M-P模型（神经元模型）</h2><p>通过对生物神经元信息处理过程进行了简化和概括。M-P模型的神经元如图。</p>
 <p><img src="/2020/05/27/mp/1.png" alt="图1"></p>
@@ -578,23 +689,12 @@
 <p><img src="/2020/05/27/mp/5.png" alt="图5"></p>
 ]]></content>
       <categories>
-        <category>神经网络笔记</category>
+        <category>机器学习笔记</category>
       </categories>
       <tags>
         <tag>神经网络</tag>
         <tag>人工智能</tag>
         <tag>机器学习</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>first page</title>
-    <url>/2020/05/26/first-page/</url>
-    <content><![CDATA[<h2 id="标题"><a href="#标题" class="headerlink" title="标题"></a>标题</h2><h3 id="title"><a href="#title" class="headerlink" title="title"></a>title</h3>]]></content>
-      <categories>
-        <category>aaa</category>
-      </categories>
-      <tags>
-        <tag>随便写的</tag>
       </tags>
   </entry>
 </search>

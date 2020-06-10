@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2020-06-09T03:16:48.539Z</updated>
+  <updated>2020-06-10T09:54:21.410Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -17,26 +17,11 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>Untitled 3</title>
-    <link href="http://yoursite.com/2020/06/09/Untitled%203/"/>
-    <id>http://yoursite.com/2020/06/09/Untitled%203/</id>
-    <published>2020-06-09T03:16:48.539Z</published>
-    <updated>2020-06-09T03:16:48.539Z</updated>
-    
-    <summary type="html">
-    
-    </summary>
-    
-    
-    
-  </entry>
-  
-  <entry>
-    <title>tensorflow-1</title>
+    <title>Tensorflow框架介绍</title>
     <link href="http://yoursite.com/2020/06/09/tensorflow-1/"/>
     <id>http://yoursite.com/2020/06/09/tensorflow-1/</id>
     <published>2020-06-09T03:16:45.000Z</published>
-    <updated>2020-06-09T15:56:40.980Z</updated>
+    <updated>2020-06-10T09:54:21.410Z</updated>
     
     <summary type="html">
     
@@ -44,22 +29,30 @@
       
         
         
-          &lt;h2 id=&quot;tensorflow学习笔记&quot;&gt;&lt;a href=&quot;#tensorflow学习笔记&quot; class=&quot;headerlink&quot; title=&quot;tensorflow学习笔记&quot;&gt;&lt;/a&gt;tensorflow学习笔记&lt;/h2&gt;&lt;h3
+          &lt;h3 id=&quot;Tensorflow框架介绍&quot;&gt;&lt;a href=&quot;#Tensorflow框架介绍&quot; class=&quot;headerlink&quot; title=&quot;Tensorflow框架介绍&quot;&gt;&lt;/a&gt;Tensorflow框架介绍&lt;/h3&gt;&lt;h4 id=&quot;1-1-TF数据流图&quot;&gt;&lt;a
         
       
     
     </summary>
     
     
+      <category term="机器学习笔记" scheme="http://yoursite.com/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
+    
+    
+      <category term="机器学习" scheme="http://yoursite.com/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+      <category term="学习笔记" scheme="http://yoursite.com/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
+    
+      <category term="Tensorflow" scheme="http://yoursite.com/tags/Tensorflow/"/>
     
   </entry>
   
   <entry>
-    <title>paperNote1</title>
+    <title>基于矩阵操作的必然性QoS约束副本放置方法 笔记</title>
     <link href="http://yoursite.com/2020/06/06/paperNote1/"/>
     <id>http://yoursite.com/2020/06/06/paperNote1/</id>
     <published>2020-06-06T10:03:09.000Z</published>
-    <updated>2020-06-06T15:47:15.715Z</updated>
+    <updated>2020-06-10T09:56:11.578Z</updated>
     
     <summary type="html">
     
@@ -80,6 +73,8 @@
     </summary>
     
     
+      <category term="论文笔记" scheme="http://yoursite.com/categories/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/"/>
+    
     
       <category term="论文笔记" scheme="http://yoursite.com/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/"/>
     
@@ -88,11 +83,11 @@
   </entry>
   
   <entry>
-    <title>bayes-3</title>
+    <title>贝叶斯网络3 贝叶斯网络</title>
     <link href="http://yoursite.com/2020/06/04/bayes-3/"/>
     <id>http://yoursite.com/2020/06/04/bayes-3/</id>
     <published>2020-06-04T00:52:35.000Z</published>
-    <updated>2020-06-04T01:45:40.380Z</updated>
+    <updated>2020-06-10T09:58:07.952Z</updated>
     
     <summary type="html">
     
@@ -107,15 +102,21 @@
     </summary>
     
     
+      <category term="机器学习笔记" scheme="http://yoursite.com/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
+    
+    
+      <category term="机器学习" scheme="http://yoursite.com/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+      <category term="贝叶斯网络" scheme="http://yoursite.com/tags/%E8%B4%9D%E5%8F%B6%E6%96%AF%E7%BD%91%E7%BB%9C/"/>
     
   </entry>
   
   <entry>
-    <title>贝叶斯网络 - 2</title>
+    <title>贝叶斯网络2 贝叶斯公式</title>
     <link href="http://yoursite.com/2020/05/31/bayes-2/"/>
     <id>http://yoursite.com/2020/05/31/bayes-2/</id>
     <published>2020-05-31T09:01:43.000Z</published>
-    <updated>2020-05-31T09:03:49.196Z</updated>
+    <updated>2020-06-10T09:57:35.196Z</updated>
     
     <summary type="html">
     
@@ -130,6 +131,8 @@
     </summary>
     
     
+      <category term="机器学习笔记" scheme="http://yoursite.com/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
+    
     
       <category term="机器学习" scheme="http://yoursite.com/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
     
@@ -138,11 +141,11 @@
   </entry>
   
   <entry>
-    <title>贝叶斯网络 - 1</title>
+    <title>贝叶斯网络1 概率基础</title>
     <link href="http://yoursite.com/2020/05/31/nayes-1/"/>
     <id>http://yoursite.com/2020/05/31/nayes-1/</id>
     <published>2020-05-31T06:59:58.000Z</published>
-    <updated>2020-06-04T03:40:10.581Z</updated>
+    <updated>2020-06-10T09:58:21.177Z</updated>
     
     <summary type="html">
     
@@ -156,6 +159,8 @@
     
     </summary>
     
+    
+      <category term="机器学习笔记" scheme="http://yoursite.com/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
     
     
       <category term="机器学习" scheme="http://yoursite.com/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
@@ -201,11 +206,11 @@
   </entry>
   
   <entry>
-    <title>神经网络模型</title>
+    <title>神经网络笔记2 神经网络模型</title>
     <link href="http://yoursite.com/2020/05/28/networkModel/"/>
     <id>http://yoursite.com/2020/05/28/networkModel/</id>
     <published>2020-05-28T15:25:26.000Z</published>
-    <updated>2020-05-29T02:15:59.059Z</updated>
+    <updated>2020-06-10T09:55:37.870Z</updated>
     
     <summary type="html">
     
@@ -220,7 +225,7 @@
     </summary>
     
     
-      <category term="神经网络笔记" scheme="http://yoursite.com/categories/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/"/>
+      <category term="机器学习笔记" scheme="http://yoursite.com/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
     
     
       <category term="神经网络" scheme="http://yoursite.com/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
@@ -303,11 +308,11 @@
   </entry>
   
   <entry>
-    <title>M-P模型</title>
+    <title>神经网络笔记1 M-P模型</title>
     <link href="http://yoursite.com/2020/05/27/mp/"/>
     <id>http://yoursite.com/2020/05/27/mp/</id>
     <published>2020-05-27T14:02:12.000Z</published>
-    <updated>2020-05-29T02:16:04.939Z</updated>
+    <updated>2020-06-10T09:55:17.341Z</updated>
     
     <summary type="html">
     
@@ -322,7 +327,7 @@
     </summary>
     
     
-      <category term="神经网络笔记" scheme="http://yoursite.com/categories/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/"/>
+      <category term="机器学习笔记" scheme="http://yoursite.com/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
     
     
       <category term="神经网络" scheme="http://yoursite.com/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
@@ -330,33 +335,6 @@
       <category term="人工智能" scheme="http://yoursite.com/tags/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/"/>
     
       <category term="机器学习" scheme="http://yoursite.com/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>first page</title>
-    <link href="http://yoursite.com/2020/05/26/first-page/"/>
-    <id>http://yoursite.com/2020/05/26/first-page/</id>
-    <published>2020-05-26T14:32:36.731Z</published>
-    <updated>2020-05-28T13:24:23.044Z</updated>
-    
-    <summary type="html">
-    
-      
-      
-        
-        
-          &lt;h2 id=&quot;标题&quot;&gt;&lt;a href=&quot;#标题&quot; class=&quot;headerlink&quot; title=&quot;标题&quot;&gt;&lt;/a&gt;标题&lt;/h2&gt;&lt;h3 id=&quot;title&quot;&gt;&lt;a href=&quot;#title&quot; class=&quot;headerlink&quot;
-        
-      
-    
-    </summary>
-    
-    
-      <category term="aaa" scheme="http://yoursite.com/categories/aaa/"/>
-    
-    
-      <category term="随便写的" scheme="http://yoursite.com/tags/%E9%9A%8F%E4%BE%BF%E5%86%99%E7%9A%84/"/>
     
   </entry>
   
