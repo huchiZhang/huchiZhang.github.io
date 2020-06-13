@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-CN">
+
+
+<head>
+  <meta charset="utf-8" />
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    搜索算法2 |  Kind &amp; Lucky
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/icon.svg" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+  
+  
+
+  
+
+<link rel="alternate" href="/atom.xml" title="Kind & Lucky" type="application/atom+xml">
+</head>
+
+</html>
+
+<body>
+  
+  <canvas width="1777" height="841" style="position: fixed; left: 0px; top: 0px; z-index: 999; pointer-events: none;"></canvas>
+  
+  <div id="app">
+    <main class="content on">
+      <section class="outer">
+  <article id="post-searchAlg2" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  搜索算法2
+</h1>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/06/13/searchAlg2/" class="article-date">
+  <time datetime="2020-06-13T02:00:16.000Z" itemprop="datePublished">2020-06-13</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%90%9C%E7%B4%A2%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0/">搜索算法笔记</a>
+  </div>
+
+      
+      
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> 字数统计:</span>
+            <span class="post-count">2.8k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> 阅读时长≈</span>
+            <span class="post-count">9 分钟</span>
+        </span>
+    </span>
+</div>
+
+      
+    </div>
+    
+
+    
+    
+    <div class="tocbot"></div>
+
+
+
+
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h2 id="状态和状态空间"><a href="#状态和状态空间" class="headerlink" title="状态和状态空间"></a>状态和状态空间</h2><h3 id="1-基本概念"><a href="#1-基本概念" class="headerlink" title="1. 基本概念"></a>1. 基本概念</h3><h5 id="状态"><a href="#状态" class="headerlink" title="状态"></a>状态</h5><ul>
+<li>表示系统状态、事实等叙述性知识的一组变量或数组。</li>
+</ul>
+<h5 id="操作算子"><a href="#操作算子" class="headerlink" title="操作算子"></a>操作算子</h5><ul>
+<li>描述状态之间的关系</li>
+</ul>
+<h5 id="状态空间"><a href="#状态空间" class="headerlink" title="状态空间"></a>状态空间</h5><ul>
+<li>利用状态变量和操作符号，表示系统或问题的符号体系，状态空间是一个四元组：（S,O,So,G）<ul>
+<li>S:状态集合</li>
+<li>O:操作算子集合</li>
+<li>So：包含问题的初始状态</li>
+<li>G：目标状态集合</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-状态空间的解"><a href="#2-状态空间的解" class="headerlink" title="2. 状态空间的解"></a>2. 状态空间的解</h3><h5 id="求解的路径"><a href="#求解的路径" class="headerlink" title="求解的路径"></a>求解的路径</h5><ul>
+<li>从So节点到G节点的路径</li>
+</ul>
+<h5 id="状态空间的一个解"><a href="#状态空间的一个解" class="headerlink" title="状态空间的一个解"></a>状态空间的一个解</h5><p><img src="/2020/06/13/searchAlg2/image-20200613110101654.png" alt="image-20200613110101654"></p>
+<h5 id="求解思路"><a href="#求解思路" class="headerlink" title="求解思路"></a>求解思路</h5><ol>
+<li>设定状态变量及确定值域</li>
+<li>确定状态组，分别列出初始状态集和目标状态集</li>
+<li>定义并确定操作算子集</li>
+<li>估计全部状态空间数，并尽可能列出全部状态空间或进行描述</li>
+<li>当状态空间数量不是很大时，按问题的有序元祖画出状态空间图，按照图搜索算法对其进行求解</li>
+</ol>
+<h5 id="举例"><a href="#举例" class="headerlink" title="举例"></a>举例</h5><p><strong>传教士与野人问题</strong></p>
+<p>在河的左岸有三个传教士、一条船和三个野人，传教士们想用这条船将所有的成员都运过河去，但是受到以下条件的限制：</p>
+<ul>
+<li>传教士和野人都会划船，但是船一次只能装两个</li>
+<li>在任何一个岸边野人数不能超过传教士，苟泽传教士就会有危险</li>
+</ul>
+<p>解题步骤：</p>
+<ul>
+<li><p>设定状态变量及确定值域</p>
+<ul>
+<li><strong>设左岸传教士数为</strong>m，则m ={0,1,2,3}；对应右岸的传教士数为3－m；</li>
+<li>设左岸传教士数为c，则c ={0,1,2,3}；对应右岸的传教士数为3－c；</li>
+<li>设左岸船数为b，则b={0,1};对应右岸的船数为3－b；</li>
+</ul>
+</li>
+<li><p>确定状态组，分别列出初始状态集和目标状态集</p>
+<ul>
+<li>建立该问题的状态空间，使用一个三元组 SK  = (m,c,b)</li>
+<li>初始状态：(3,3,1)</li>
+<li>目标状态：(0,0,0)</li>
+</ul>
+</li>
+<li><p>定义并确定操作算子集</p>
+<ul>
+<li>以河的左岸为基点来考虑，把船<strong>从左岸划向右岸</strong>定义为<strong>Pij</strong>操作。其中,第一下标i表示船载的传教士数, 第二下标j表示船载的野人数；同理，<strong>从右岸将船划回左岸</strong>称之为<strong>Qij</strong>操作，下标的定义同前。则共有10种操作，操作集为</li>
+<li><strong>F={P01，P10，P11，P02，P20，Q01，Q10，Q11，Q02，Q20}</strong></li>
+</ul>
+</li>
+<li><p>估计全部状态空间数，并尽可能列出全部状态空间或进行描述</p>
+<ul>
+<li><p>在这个问题世界中，S0 =（3,3,1）为初始状态，S31 = Sg =（0,0,0）为目标状态。全部的可能状态共有32个，如表所示。</p>
+</li>
+<li><p><img src="/2020/06/13/searchAlg2/clip_image012_2.jpg" alt="img"></p>
+<blockquote>
+<p><strong>注意：</strong>按题目规定条件，应划去非法状态，从而加快搜索效率。</p>
+<ol>
+<li><p><strong>首先可以划去左岸边</strong>野人数目超过传教士的情况，即S4、S8、S9、S20、S24、S25等6种状态是不合法的；</p>
+</li>
+<li><p><strong>应划去右岸边</strong>野人<strong>数目超过修道士的情况，即S6、S7、S11、S22、S23、S27等情况；</strong></p>
+</li>
+<li><p>应划去4种不可能出现状态：划去S15和S16——船不可能停靠在无人的岸边；划去S3——传教士不可能在数量占优势的<strong>野人</strong>眼皮底下把船安全地划回来；划去S28——传教士也不可能在数量占优势的<strong>野人</strong>眼皮底下把船安全地划向对岸。可见，在状态空间中，真正符合题目规定条件的<strong>只有16个合理状态</strong>。</p>
+</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><p>当状态空间数量不是很大时，按问题的有序元祖画出状态空间图，按照图搜索算法对其进行求解</p>
+<ul>
+<li><p>画出的状态空间图如下图，图中任意一条从S0到达S31的路径都是该问题的解。</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613121549557.png" alt="image-20200613121549557"></p>
+</li>
+<li><p>状态空间的建立，以BFS的方式为例，从初始节点开始根据操作集建立树，遇到不可能的节点就停止继续建造其所在子树</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613120600674.png" alt="image-20200613120600674"></p>
+</li>
+<li><p>找到其中从初始状态到目标状态的路径</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613120750089.png" alt="image-20200613120750089"></p>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p> 参考：</p>
+<ol>
+<li><a href="https://www.cnblogs.com/6DAN_HUST/archive/2010/08/23/1806560.html" target="_blank" rel="noopener">人工智能——状态空间搜索及状态空间表示法</a></li>
+</ol>
+</blockquote>
+<h2 id="盲目搜索（无信息搜索）"><a href="#盲目搜索（无信息搜索）" class="headerlink" title="盲目搜索（无信息搜索）"></a>盲目搜索（无信息搜索）</h2><p>盲目搜索是指在没有关于结论的条件下就按部就班的一个个搜索。盲目搜索策略是以节点扩展的次序来分类的（宽度优先，一致代价，深度优先，深度受限，迭代加深，双向搜索）。</p>
+<blockquote>
+<p>一般而言，指数级别复杂度的搜索问题不能用无信息的搜索算法求解，除非是规模很小的实例</p>
+</blockquote>
+<h4 id="1-广度优先搜索（BFS）"><a href="#1-广度优先搜索（BFS）" class="headerlink" title="1. 广度优先搜索（BFS）"></a>1. 广度优先搜索（BFS）</h4><p>最简单的盲目搜索过程就是广度优先搜索（breadth-first search）。该过程把所有的算子应用到开始节点以产生一个显示的状态空间图，再把所有可能的算子应用到开始节点的所有直接后继，再到后继的后继，等等。搜索过程一律从开始节点向外扩展。把所有可能的算子称为后继函数。当把后继函数应用到一个节点时，产生一个节点集。一个后继函数的每一次应用称为节点的扩展。</p>
+<blockquote>
+<p> <strong>bfs的性质</strong></p>
+<ul>
+<li>当问题有解时一定能找到解</li>
+<li>当问题为单位耗散值，且问题有解时，一定能找到最优解、</li>
+<li>方法与问题无关，具有通用性</li>
+<li>效率较低</li>
+</ul>
+</blockquote>
+<h5 id="算法流程："><a href="#算法流程：" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
+<li>把起始节点放到OPEN表中(如果该起始节点为一目标节点，则求得一个解答)。</li>
+<li>如果OPEN是个空表，则没有解，失败退出；否则继续。</li>
+<li>把第一个节点(节点n)从OPEN表移出，并把它放入CLOSED的扩展节点表中。 扩展节点n。如果没有后继节点，则转向上述第(2)步。</li>
+<li>把n的所有后继节点放到OPEN表末端，并提供从这些后继节点回到n的指针。</li>
+<li>如果n的任一个后继节点是个目标节点，则找到一个解答，成功退出；否则转向第(2)步。</li>
+</ol>
+<p><img src="/2020/06/13/searchAlg2/20180704091506488" alt="img"></p>
+<h4 id="2-深度优先搜索（DFS）"><a href="#2-深度优先搜索（DFS）" class="headerlink" title="2. 深度优先搜索（DFS）"></a>2. 深度优先搜索（DFS）</h4><p>深度优先总是扩展搜索树的当前边缘节点集 中最深的节点（搜索直接推到最深层）。如果最深层节点扩展完了，就回溯到下一个还有未扩展节点的深度稍浅的节点。</p>
+<blockquote>
+<p>DFS的性质：</p>
+<ul>
+<li>DFS的搜索效率严重依赖于使用的是图搜索还是树搜索<ul>
+<li>如果是图搜索（避免了重复状态和冗余路径），那么DFS在有限状态空间就是完备的。</li>
+<li>如果是树搜索，则不完备，因为会出现死循环（DFS算法本身是没有explored set的）。</li>
+</ul>
+</li>
+<li>不是最优的</li>
+<li>时间复杂度受限于状态空间的规模，为O(bm)，m是任一节点的最大深度。</li>
+<li>空间复杂度很好，为O(bm)。所以DFS在AI的很多领域成为工作主力。</li>
+</ul>
+</blockquote>
+<h5 id="算法流程：-1"><a href="#算法流程：-1" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
+<li>把起始节点放到OPEN表中(如果该起始节点为一目标节点，则求得一个解答)。</li>
+<li>如果OPEN是个空表，则没有解，失败退出；否则继续。</li>
+<li>把第一个节点(节点n)从OPEN表移出，并把它放入CLOSED的扩展节点表中。</li>
+<li>考察节点n是否为目标节点，若是，则找到问题的解，用回溯法求解路径，退出</li>
+<li>如果没有后继节点，则转向上述第(2)步。</li>
+<li>扩展节点n，把n的所有后继节点放到OPEN表前端，并提供从这些后继节点回到n的指针。转向第(2)步。</li>
+</ol>
+<p><img src="/2020/06/13/searchAlg2/20180704103614765" alt="img"></p>
+<h4 id="3-BFS和DFS的比较"><a href="#3-BFS和DFS的比较" class="headerlink" title="3. BFS和DFS的比较"></a>3. BFS和DFS的比较</h4><h5 id="遍历同一组数据"><a href="#遍历同一组数据" class="headerlink" title="遍历同一组数据"></a>遍历同一组数据</h5><p>遍历方式不同，但都可以遍历到，时间相同。</p>
+<p><img src="/2020/06/13/searchAlg2/1.gif" alt></p>
+<h5 id="同时搜索一个数据"><a href="#同时搜索一个数据" class="headerlink" title="同时搜索一个数据"></a>同时搜索一个数据</h5><p>通过下面这个图可以看到深度优先搜索虽然更快的找到一个解但是并不是最优的。</p>
+<p><img src="/2020/06/13/searchAlg2/2.gif" alt></p>
+<h5 id="通过八数码的问题比较两个算法"><a href="#通过八数码的问题比较两个算法" class="headerlink" title="通过八数码的问题比较两个算法"></a>通过八数码的问题比较两个算法</h5><p>八数码问题：在3×3的方格棋盘上，摆放着1到8这八个数码，有1个方格是空的，其初始状态如图1所示，要求对空格执行空格左移、空格右移、空格上移和空格下移这四个操作使得棋盘从初始状态到目标状态。</p>
+<p><img src="/2020/06/13/searchAlg2/11155718-dbdf23882ee74c03a6093e960551428f.png" alt="img"></p>
+<p>广度有点搜索过程：</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613165626335.png" alt="image-20200613165626335"></p>
+<p>深度优先搜索过程：</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613165801130.png" alt="image-20200613165801130"></p>
+<h4 id="4-其他算法"><a href="#4-其他算法" class="headerlink" title="4. 其他算法"></a>4. 其他算法</h4><h5 id="A-一致代价搜索-UCS"><a href="#A-一致代价搜索-UCS" class="headerlink" title="A . 一致代价搜索(UCS)"></a>A . 一致代价搜索(UCS)</h5><p>一致代价搜索扩展的是路径消耗g(n)（从初始状态到当前状态的路径耗散）最小的节点n。（可以通过将边缘节点组织成按g值排序的队列来实现）。如果所有的连接弧线具有相等的代价,那么等代价算法就简化为宽度优先搜索算法,在等代价搜索算法中,不是描述沿着等长度路径断层进行的扩展,而是描述沿着等代价路径断层进行的扩展。</p>
+<p><strong>算法流程：</strong></p>
+<ol>
+<li>把起始节点S放到未扩展节点表OPEN中。如果此起始节点为一目标节点,则求得一个解,否则令g(S)=0。</li>
+<li>如果OPEN是个空表,则没有解而失败退出。</li>
+<li>从OPEN表中选择一个节点,使其g()为最小。如果有几个节点都合格,那么就要选择一个目标节点作为节点(要是有目标节点的话);否则,就从中选一个作为节点i。把节点i从OPEN表移至扩展节点表 CLOSED中。</li>
+<li>如果节点i为目标节点,则求得一个解。</li>
+<li>扩展节点i。如果没有后继节点,则转向第(2)步。</li>
+<li>对于节点i的每个后继节点j,计算g(j)=g(i)+c(i,j),并把所有后继节点j放进OPEN表。提供回到节点i的指针。</li>
+<li>转向第2步。</li>
+</ol>
+<p><strong>流程图：</strong></p>
+<p><img src="/2020/06/13/searchAlg2/u=2390937715,1397457370&fm=173&app=25&f=JPEG" alt="img"></p>
+<h5 id="B-深度受限"><a href="#B-深度受限" class="headerlink" title="B. 深度受限"></a>B. 深度受限</h5><p>设置界限l来避免DFS在无限状态空间下搜索失败的尴尬情况。即，深度为l的节点被当做最深层节点（没有后继节点）来对待。</p>
+<h5 id="C-迭代加深的深度优先算法-iterative-deepening-search（IDS）"><a href="#C-迭代加深的深度优先算法-iterative-deepening-search（IDS）" class="headerlink" title="C. 迭代加深的深度优先算法 iterative deepening search（IDS）"></a>C. 迭代加深的深度优先算法 iterative deepening search（IDS）</h5><p>IDS = DFS + BFS。<br>可以说是结合了宽度优先和深度优先的优点了：</p>
+<ul>
+<li>空间复杂度：O(bd) （和DFS一样）</li>
+<li>在分支因子有限时完备，在路径待机时节点深度的非递减函数时最优（和BFS一样）。</li>
+</ul>
+<p><img src="/2020/06/13/searchAlg2/20180704105848581" alt="这里写图片描述"></p>
+<h5 id="D-双向搜索"><a href="#D-双向搜索" class="headerlink" title="D. 双向搜索"></a>D. 双向搜索</h5><p>一个从初始状态开始搜，一个从目标状态开始搜，当边缘有交集，就说明找到了解。</p>
+<p>好处：如果两个都用BFS，那么复杂度就变成了O(bd/2)+O(bd/2)，这肯定是要远远小于O(bd)的。所以说减小了复杂度。</p>
+<blockquote>
+<p>参考：</p>
+<p><a href="https://baijiahao.baidu.com/s?id=1621524116688929556&wfr=spider&for=pc" target="_blank" rel="noopener">人工智能盲目搜索三大法则，你要懂！</a></p>
+<p><a href="[https://blog.csdn.net/weixin_39278265/article/details/80906740#%E4%B8%89%E6%97%A0%E4%BF%A1%E6%81%AF%E6%90%9C%E7%B4%A2%E7%9B%B2%E7%9B%AE%E6%90%9C%E7%B4%A2%E7%AD%96%E7%95%A5](https://blog.csdn.net/weixin_39278265/article/details/80906740#三无信息搜索盲目搜索策略)">人工智能第三章（1）——无信息搜索（盲目搜索）</a></p>
+<p><a href="https://www.cnblogs.com/sillypudding/archive/2013/04/11/3014771.html" target="_blank" rel="noopener">人工智能实验4——用盲目搜索求解八数码问题</a></p>
+<p><a href="https://www.cnblogs.com/Cccccz/p/11156000.html" target="_blank" rel="noopener">人工智能07 盲目搜索</a></p>
+</blockquote>
+
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+        <div class="declare">
+          <ul class="post-copyright">
+            <li>
+              <i class="ri-copyright-line"></i>
+              <strong>版权声明： </strong>
+              本博客所有文章除特别声明外，著作权归作者所有。转载请注明出处！
+            </li>
+          </ul>
+        </div>
+        
+    <footer class="article-footer">
+      
+          
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://yoursite.com/2020/06/13/searchAlg2/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/" rel="tag">人工智能</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%90%9C%E7%B4%A2%E7%AE%97%E6%B3%95/" rel="tag">搜索算法</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+  
+  <nav class="article-nav">
+    
+    
+      <a href="/2020/06/12/tensorflow-2/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">tensorflow文件操作</div>
+      </a>
+    
+  </nav>
+
+
+  
+
+  
+  
+<!-- valine评论 -->
+<div id="vcomments-box">
+    <div id="vcomments">
+    </div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js'></script>
+<script>
+    new Valine({
+        el: '#vcomments',
+        app_id: 'dEVDDWhXqMT8KhXvNx1rDmmA-gzGzoHsz',
+        app_key: 'v0mSrHnmORU6F8eFbeOkbebr',
+        path: window.location.pathname,
+        notify: 'false',
+        verify: 'false',
+        avatar: 'monsterid',
+        placeholder: '给我的文章加点评论吧~',
+        recordIP: true
+    });
+    const infoEle = document.querySelector('#vcomments .info');
+    if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+        infoEle.childNodes.forEach(function (item) {
+            item.parentNode.removeChild(item);
+        });
+    }
+</script>
+<style>
+    #vcomments-box {
+        padding: 5px 30px;
+    }
+
+    @media screen and (max-width: 800px) {
+        #vcomments-box {
+            padding: 5px 0px;
+        }
+    }
+
+    #vcomments-box #vcomments {
+        background-color: #fff;
+    }
+
+    .v .vlist .vcard .vh {
+        padding-right: 20px;
+    }
+
+    .v .vlist .vcard {
+        padding-left: 10px;
+    }
+</style>
+
+  
+
+  
+  
+  
+  
+  
+
+</article>
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020
+        <i class="ri-heart-fill heart_icon"></i> JM Zhang
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        由 <a href="https://hexo.io" target="_blank">Hexo</a> 强力驱动
+        <span class="division">|</span>
+        主题 - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/icon.svg" alt="Kind &amp; Lucky"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">时间轴</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/photos">相册</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="搜索">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Subtitle -->
+
+<script>
+  try {
+    var typed = new Typed("#subtitle", {
+      strings: ['每个人都会犯错，犯了错就会受到惩罚', '最重的惩罚叫做“自己不放过自己”，', '越善良的人越是如此。'],
+      startDelay: 0,
+      typeSpeed: 200,
+      loop: true,
+      backSpeed: 50,
+      showCursor: true
+    });
+  } catch (err) {
+    console.log(err)
+  }
+</script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+<!-- ClickLove -->
+
+<!-- ClickBoom -->
+
+
+<script src="/js/clickBoom.js"></script>
+
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+
+    
+  </div>
+</body>
+
+</html>

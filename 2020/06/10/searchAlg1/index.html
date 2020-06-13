@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-CN">
+
+
+<head>
+  <meta charset="utf-8" />
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    搜索算法1 |  Kind &amp; Lucky
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/icon.svg" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+  
+  
+
+  
+
+<link rel="alternate" href="/atom.xml" title="Kind & Lucky" type="application/atom+xml">
+</head>
+
+</html>
+
+<body>
+  
+  <canvas width="1777" height="841" style="position: fixed; left: 0px; top: 0px; z-index: 999; pointer-events: none;"></canvas>
+  
+  <div id="app">
+    <main class="content on">
+      <section class="outer">
+  <article id="post-searchAlg1" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  搜索算法1
+</h1>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/06/10/searchAlg1/" class="article-date">
+  <time datetime="2020-06-10T12:29:34.000Z" itemprop="datePublished">2020-06-10</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%90%9C%E7%B4%A2%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0/">搜索算法笔记</a>
+  </div>
+
+      
+      
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> 字数统计:</span>
+            <span class="post-count">1.5k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> 阅读时长≈</span>
+            <span class="post-count">5 分钟</span>
+        </span>
+    </span>
+</div>
+
+      
+    </div>
+    
+
+    
+    
+    <div class="tocbot"></div>
+
+
+
+
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h2 id="搜索问题说明"><a href="#搜索问题说明" class="headerlink" title="搜索问题说明"></a>搜索问题说明</h2><p>搜索问题是求解问题的一种方法。</p>
+<h3 id="1-搜索问题要解决的几个基本问题"><a href="#1-搜索问题要解决的几个基本问题" class="headerlink" title="1. 搜索问题要解决的几个基本问题"></a>1. 搜索问题要解决的几个基本问题</h3><ul>
+<li>是否一定能找到一个解</li>
+<li>找到的解是否为最佳</li>
+<li>时间和空间复杂度如何</li>
+<li>是否终止运行或者陷入一个死循环</li>
+</ul>
+<h3 id="2-搜索的方向"><a href="#2-搜索的方向" class="headerlink" title="2. 搜索的方向"></a>2. 搜索的方向</h3><ul>
+<li>数据驱动：从初始状态出发的正向搜索</li>
+<li>目的驱动：从目的状态出发的逆向搜索</li>
+<li>双向搜索：两面同时搜索</li>
+</ul>
+<h3 id="3-一般的解题流程"><a href="#3-一般的解题流程" class="headerlink" title="3. 一般的解题流程"></a>3. 一般的解题流程</h3><p><img src="/2020/06/10/searchAlg1/image-20200610234626613.png" alt="image-20200610234626613"></p>
+<h3 id="4-一般的算法"><a href="#4-一般的算法" class="headerlink" title="4. 一般的算法"></a>4. 一般的算法</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">1. G&#x3D;G0 (G0&#x3D;s), OPEN:&#x3D;(s);</span><br><span class="line">2. CLOSED:&#x3D;( );</span><br><span class="line">3. LOOP: IF OPEN&#x3D;( ) THEN EXIT(FAIL);</span><br><span class="line">4. n:&#x3D;FIRST(OPEN), REMOVE(n, OPEN),</span><br><span class="line">	ADD(n, CLOSED);</span><br><span class="line">5. IF GOAL(n) THEN EXIT(SUCCESS);</span><br><span class="line">6. EXPAND(n)→&#123;mi&#125;, G:&#x3D;ADD(mi, G);</span><br><span class="line">7. 标记和修改指针：</span><br><span class="line">	ADD(mj, OPEN), 并标记mj到n的指针；</span><br><span class="line">	计算是否要修改mk、ml到n的指针；</span><br><span class="line">	计算是否要修改ml到其后继节点的指针；</span><br><span class="line">8. 对OPEN中的节点按某种原则重新排序；</span><br><span class="line">9. GO LOOP；</span><br></pre></td></tr></table></figure>
+
+<h2 id="回溯搜索算法"><a href="#回溯搜索算法" class="headerlink" title="回溯搜索算法"></a>回溯搜索算法</h2><h3 id="1-回溯策略"><a href="#1-回溯策略" class="headerlink" title="1. 回溯策略"></a>1. 回溯策略</h3><p>​        回溯是五大常用算法策略之一，它的核心思想其实就是将解空间看作是一棵树的结构，从树根到其中一个叶子节点的路径就是一个可能的解，根据约束条件，即可得到满足要求的解。求解问题时，发现到某个节点而不满足求解的条件时，就“回溯”返回，尝试别的路径。回溯法是一种选优搜索法，按选优条件向前搜索，以达到目标。</p>
+<p>​        回溯法师暴力搜索法中的一种，采用试错的思想，尝试分布的去解决一个问题。在分布解决问题的过程中发现得不到正确解答的过程中，将取消上一步或几步的操作，再通过其他方法寻找解决答案。回溯法用最简单的递归的方法来实现。</p>
+<h4 id="问题的解空间"><a href="#问题的解空间" class="headerlink" title="问题的解空间"></a>问题的解空间</h4><p>​        在用回溯法解决问题时，应先明确定义问题的解空间。解空间就是一个问题所有的可能性，问题的解空间至少包含问题的一个最优解。</p>
+<h4 id="回溯法的基本思想"><a href="#回溯法的基本思想" class="headerlink" title="回溯法的基本思想"></a>回溯法的基本思想</h4><p>​        在确定解空间后，回溯法从根结点出发，以深度优先搜索方式搜索整个解空间。递归的在解空间进行搜索，直到找到所要求的解或解空间中所有解都被遍历。</p>
+<blockquote>
+<p><strong>回溯法解题的三个步骤：</strong></p>
+<ol>
+<li>针对所给的问题，定义问题的解空间</li>
+<li>确定易于搜索的解空间结构</li>
+<li>以深度优先方式搜索解空间，并在搜索过程中调用剪枝函数避免无效搜索。</li>
+</ol>
+</blockquote>
+<h4 id="回溯法的实现"><a href="#回溯法的实现" class="headerlink" title="回溯法的实现"></a>回溯法的实现</h4><ol>
+<li>递归回溯</li>
+</ol>
+<p>使用递归实现回溯法一般函数结构如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 递归回溯函数，t代表当前的递归深度</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">Bcktract</span><span class="params">(t)</span>:</span></span><br><span class="line">    <span class="comment"># 遍历到解就将解返回</span></span><br><span class="line">    <span class="keyword">if</span> t &gt; n:</span><br><span class="line">        <span class="keyword">return</span> X</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># f(n,t)和g(n,t)分别代表当前节点未处理子树的初始编号和终止编号</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(f(n,t),g(n,t)):</span><br><span class="line">            <span class="comment"># 把当前节点加入返回集合X中</span></span><br><span class="line">            x[t] = h(i)</span><br><span class="line">            <span class="comment"># 如果当前节点满足条件，再在当前节点的基础上进行递归，不满足条件就直接继续下次循环</span></span><br><span class="line">            <span class="comment"># constarint(t) 和 Bound(t)分别为约束函数和限界函数，这两个函数的作用就是剪枝函数</span></span><br><span class="line">            <span class="keyword">if</span> constarint(t) <span class="keyword">and</span> Bound(t):</span><br><span class="line">                Bcktract(t+<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>迭代回溯</li>
+</ol>
+<p>使用非递归的方式实现回溯法的函数结构如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">IterativeBacktrack</span><span class="params">()</span>:</span></span><br><span class="line">    t = <span class="number">1</span></span><br><span class="line">    <span class="keyword">while</span>(t &gt; <span class="number">0</span>):</span><br><span class="line">        <span class="comment"># 当f(n,t) &lt;= g(n,t)时说明当前节点下一层还没有遍历</span></span><br><span class="line">        <span class="keyword">if</span> (f(n,t) &lt;= g(n,t)):</span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> range(f(n,t),g(n,t)):</span><br><span class="line">            	<span class="comment"># 把当前节点加入返回集合X中</span></span><br><span class="line">            	x[t] = h(i)</span><br><span class="line">            	<span class="comment"># 如果当前节点满足条件，再在当前节点的基础上进行递归，不满足条件就直接继续下次循环</span></span><br><span class="line">            	<span class="comment"># constarint(t) 和 Bound(t)分别为约束函数和限界函数，这两个函数的作用就是剪枝函数</span></span><br><span class="line">                <span class="comment"># 两个函数同时满足说明本层的i节点是满足要求的</span></span><br><span class="line">            	<span class="keyword">if</span> constarint(t) <span class="keyword">and</span> Bound(t):</span><br><span class="line">                    <span class="keyword">if</span> (Solution(t)):</span><br><span class="line">                        <span class="keyword">return</span> x</span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        t = t+<span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            t = t - <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>算法复杂度</li>
+</ol>
+<p>用回溯法解体的一个显著特征是在搜索过程中动态产生问题的解空间。在任何时刻，算法只保存从根节点到当前节点（扩展节点）的路径。如果解空间树从根节点到叶节点的最长路径的长度为h(n)，则回溯法所需的计算空间通常为O(h(n))。而显式地存储整个解空间则需要O(2^h(n))或O(h(n)!)内存空间。</p>
+<h3 id="2-回溯算法存在的问题"><a href="#2-回溯算法存在的问题" class="headerlink" title="2. 回溯算法存在的问题"></a>2. 回溯算法存在的问题</h3><ol>
+<li><p>深度问题</p>
+<img src="/2020/06/10/searchAlg1/image-20200611231358393.png" alt="image-20200611231358393" style="zoom:80%;">
+</li>
+<li><p>死循环问题</p>
+<p><img src="/2020/06/10/searchAlg1/image-20200611231430823.png" alt="image-20200611231430823"></p>
+</li>
+<li><p>解决办法</p>
+<ul>
+<li>对搜索深度加以限制</li>
+<li>记录从初始状态到当前状态得路径</li>
+</ul>
+</li>
+</ol>
+<h3 id="3-回溯法举例"><a href="#3-回溯法举例" class="headerlink" title="3. 回溯法举例"></a>3. 回溯法举例</h3><p><strong>皇后问题：</strong></p>
+<p>​        在4*4的棋盘中，没行放一个棋子，要求每个棋子的是其所在行、所在列、所在斜行的唯一的一个。</p>
+<p><strong>解题方法：</strong></p>
+<p>​        <img src="/2020/06/10/searchAlg1/search-1.gif" alt="search-1"></p>
+<p>算法代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">is_attack</span><span class="params">(queue, x, y)</span>:</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(x):</span><br><span class="line">        <span class="keyword">if</span> queue[i] == y <span class="keyword">or</span> abs(x - i) == abs(queue[i] - y):</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 按列来摆放皇后</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">put_position</span><span class="params">(n, queue, col)</span>:</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(n):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> is_attack(queue, col, i):</span><br><span class="line">            queue[col] = i</span><br><span class="line">            <span class="keyword">if</span> col == n - <span class="number">1</span>:    <span class="comment"># 此时最后一个皇后摆放好了，打印结果。</span></span><br><span class="line">                print(queue)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                put_position(n, queue, col + <span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">n = <span class="number">4</span>       <span class="comment"># 这里是n 就是n皇后</span></span><br><span class="line"><span class="comment"># 存储皇后位置的一维数组，数组下标表示皇后所在的列，下标对应的值为皇后所在的行。</span></span><br><span class="line">queue = [<span class="literal">None</span> <span class="keyword">for</span> i <span class="keyword">in</span> range(n)]</span><br><span class="line">put_position(n, queue, <span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<p><img src="/2020/06/10/searchAlg1/image-20200613094915139.png" alt="image-20200613094915139"></p>
+
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+        <div class="declare">
+          <ul class="post-copyright">
+            <li>
+              <i class="ri-copyright-line"></i>
+              <strong>版权声明： </strong>
+              本博客所有文章除特别声明外，著作权归作者所有。转载请注明出处！
+            </li>
+          </ul>
+        </div>
+        
+    <footer class="article-footer">
+      
+          
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://yoursite.com/2020/06/10/searchAlg1/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/" rel="tag">人工智能</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%9B%9E%E6%BA%AF%E7%AD%96%E7%95%A5/" rel="tag">回溯策略</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%90%9C%E7%B4%A2%E7%AE%97%E6%B3%95/" rel="tag">搜索算法</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+  
+  <nav class="article-nav">
+    
+      <a href="/2020/06/11/decisionTree1/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            decisionTree1
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2020/06/09/tensorflow-1/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">Tensorflow框架介绍</div>
+      </a>
+    
+  </nav>
+
+
+  
+
+  
+  
+<!-- valine评论 -->
+<div id="vcomments-box">
+    <div id="vcomments">
+    </div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js'></script>
+<script>
+    new Valine({
+        el: '#vcomments',
+        app_id: 'dEVDDWhXqMT8KhXvNx1rDmmA-gzGzoHsz',
+        app_key: 'v0mSrHnmORU6F8eFbeOkbebr',
+        path: window.location.pathname,
+        notify: 'false',
+        verify: 'false',
+        avatar: 'monsterid',
+        placeholder: '给我的文章加点评论吧~',
+        recordIP: true
+    });
+    const infoEle = document.querySelector('#vcomments .info');
+    if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+        infoEle.childNodes.forEach(function (item) {
+            item.parentNode.removeChild(item);
+        });
+    }
+</script>
+<style>
+    #vcomments-box {
+        padding: 5px 30px;
+    }
+
+    @media screen and (max-width: 800px) {
+        #vcomments-box {
+            padding: 5px 0px;
+        }
+    }
+
+    #vcomments-box #vcomments {
+        background-color: #fff;
+    }
+
+    .v .vlist .vcard .vh {
+        padding-right: 20px;
+    }
+
+    .v .vlist .vcard {
+        padding-left: 10px;
+    }
+</style>
+
+  
+
+  
+  
+  
+  
+  
+
+</article>
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020
+        <i class="ri-heart-fill heart_icon"></i> JM Zhang
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        由 <a href="https://hexo.io" target="_blank">Hexo</a> 强力驱动
+        <span class="division">|</span>
+        主题 - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/icon.svg" alt="Kind &amp; Lucky"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">时间轴</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/photos">相册</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="搜索">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Subtitle -->
+
+<script>
+  try {
+    var typed = new Typed("#subtitle", {
+      strings: ['每个人都会犯错，犯了错就会受到惩罚', '最重的惩罚叫做“自己不放过自己”，', '越善良的人越是如此。'],
+      startDelay: 0,
+      typeSpeed: 200,
+      loop: true,
+      backSpeed: 50,
+      showCursor: true
+    });
+  } catch (err) {
+    console.log(err)
+  }
+</script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+<!-- ClickLove -->
+
+<!-- ClickBoom -->
+
+
+<script src="/js/clickBoom.js"></script>
+
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+
+    
+  </div>
+</body>
+
+</html>

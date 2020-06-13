@@ -1,6 +1,408 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>搜索算法2</title>
+    <url>/2020/06/13/searchAlg2/</url>
+    <content><![CDATA[<h2 id="状态和状态空间"><a href="#状态和状态空间" class="headerlink" title="状态和状态空间"></a>状态和状态空间</h2><h3 id="1-基本概念"><a href="#1-基本概念" class="headerlink" title="1. 基本概念"></a>1. 基本概念</h3><h5 id="状态"><a href="#状态" class="headerlink" title="状态"></a>状态</h5><ul>
+<li>表示系统状态、事实等叙述性知识的一组变量或数组。</li>
+</ul>
+<h5 id="操作算子"><a href="#操作算子" class="headerlink" title="操作算子"></a>操作算子</h5><ul>
+<li>描述状态之间的关系</li>
+</ul>
+<h5 id="状态空间"><a href="#状态空间" class="headerlink" title="状态空间"></a>状态空间</h5><ul>
+<li>利用状态变量和操作符号，表示系统或问题的符号体系，状态空间是一个四元组：（S,O,So,G）<ul>
+<li>S:状态集合</li>
+<li>O:操作算子集合</li>
+<li>So：包含问题的初始状态</li>
+<li>G：目标状态集合</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-状态空间的解"><a href="#2-状态空间的解" class="headerlink" title="2. 状态空间的解"></a>2. 状态空间的解</h3><h5 id="求解的路径"><a href="#求解的路径" class="headerlink" title="求解的路径"></a>求解的路径</h5><ul>
+<li>从So节点到G节点的路径</li>
+</ul>
+<h5 id="状态空间的一个解"><a href="#状态空间的一个解" class="headerlink" title="状态空间的一个解"></a>状态空间的一个解</h5><p><img src="/2020/06/13/searchAlg2/image-20200613110101654.png" alt="image-20200613110101654"></p>
+<h5 id="求解思路"><a href="#求解思路" class="headerlink" title="求解思路"></a>求解思路</h5><ol>
+<li>设定状态变量及确定值域</li>
+<li>确定状态组，分别列出初始状态集和目标状态集</li>
+<li>定义并确定操作算子集</li>
+<li>估计全部状态空间数，并尽可能列出全部状态空间或进行描述</li>
+<li>当状态空间数量不是很大时，按问题的有序元祖画出状态空间图，按照图搜索算法对其进行求解</li>
+</ol>
+<h5 id="举例"><a href="#举例" class="headerlink" title="举例"></a>举例</h5><p><strong>传教士与野人问题</strong></p>
+<p>在河的左岸有三个传教士、一条船和三个野人，传教士们想用这条船将所有的成员都运过河去，但是受到以下条件的限制：</p>
+<ul>
+<li>传教士和野人都会划船，但是船一次只能装两个</li>
+<li>在任何一个岸边野人数不能超过传教士，苟泽传教士就会有危险</li>
+</ul>
+<p>解题步骤：</p>
+<ul>
+<li><p>设定状态变量及确定值域</p>
+<ul>
+<li><strong>设左岸传教士数为</strong>m，则m ={0,1,2,3}；对应右岸的传教士数为3－m；</li>
+<li>设左岸传教士数为c，则c ={0,1,2,3}；对应右岸的传教士数为3－c；</li>
+<li>设左岸船数为b，则b={0,1};对应右岸的船数为3－b；</li>
+</ul>
+</li>
+<li><p>确定状态组，分别列出初始状态集和目标状态集</p>
+<ul>
+<li>建立该问题的状态空间，使用一个三元组 SK  = (m,c,b)</li>
+<li>初始状态：(3,3,1)</li>
+<li>目标状态：(0,0,0)</li>
+</ul>
+</li>
+<li><p>定义并确定操作算子集</p>
+<ul>
+<li>以河的左岸为基点来考虑，把船<strong>从左岸划向右岸</strong>定义为<strong>Pij</strong>操作。其中,第一下标i表示船载的传教士数, 第二下标j表示船载的野人数；同理，<strong>从右岸将船划回左岸</strong>称之为<strong>Qij</strong>操作，下标的定义同前。则共有10种操作，操作集为</li>
+<li><strong>F={P01，P10，P11，P02，P20，Q01，Q10，Q11，Q02，Q20}</strong></li>
+</ul>
+</li>
+<li><p>估计全部状态空间数，并尽可能列出全部状态空间或进行描述</p>
+<ul>
+<li><p>在这个问题世界中，S0 =（3,3,1）为初始状态，S31 = Sg =（0,0,0）为目标状态。全部的可能状态共有32个，如表所示。</p>
+</li>
+<li><p><img src="/2020/06/13/searchAlg2/clip_image012_2.jpg" alt="img"></p>
+<blockquote>
+<p><strong>注意：</strong>按题目规定条件，应划去非法状态，从而加快搜索效率。</p>
+<ol>
+<li><p><strong>首先可以划去左岸边</strong>野人数目超过传教士的情况，即S4、S8、S9、S20、S24、S25等6种状态是不合法的；</p>
+</li>
+<li><p><strong>应划去右岸边</strong>野人<strong>数目超过修道士的情况，即S6、S7、S11、S22、S23、S27等情况；</strong></p>
+</li>
+<li><p>应划去4种不可能出现状态：划去S15和S16——船不可能停靠在无人的岸边；划去S3——传教士不可能在数量占优势的<strong>野人</strong>眼皮底下把船安全地划回来；划去S28——传教士也不可能在数量占优势的<strong>野人</strong>眼皮底下把船安全地划向对岸。可见，在状态空间中，真正符合题目规定条件的<strong>只有16个合理状态</strong>。</p>
+</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><p>当状态空间数量不是很大时，按问题的有序元祖画出状态空间图，按照图搜索算法对其进行求解</p>
+<ul>
+<li><p>画出的状态空间图如下图，图中任意一条从S0到达S31的路径都是该问题的解。</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613121549557.png" alt="image-20200613121549557"></p>
+</li>
+<li><p>状态空间的建立，以BFS的方式为例，从初始节点开始根据操作集建立树，遇到不可能的节点就停止继续建造其所在子树</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613120600674.png" alt="image-20200613120600674"></p>
+</li>
+<li><p>找到其中从初始状态到目标状态的路径</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613120750089.png" alt="image-20200613120750089"></p>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p> 参考：</p>
+<ol>
+<li><a href="https://www.cnblogs.com/6DAN_HUST/archive/2010/08/23/1806560.html" target="_blank" rel="noopener">人工智能——状态空间搜索及状态空间表示法</a></li>
+</ol>
+</blockquote>
+<h2 id="盲目搜索（无信息搜索）"><a href="#盲目搜索（无信息搜索）" class="headerlink" title="盲目搜索（无信息搜索）"></a>盲目搜索（无信息搜索）</h2><p>盲目搜索是指在没有关于结论的条件下就按部就班的一个个搜索。盲目搜索策略是以节点扩展的次序来分类的（宽度优先，一致代价，深度优先，深度受限，迭代加深，双向搜索）。</p>
+<blockquote>
+<p>一般而言，指数级别复杂度的搜索问题不能用无信息的搜索算法求解，除非是规模很小的实例</p>
+</blockquote>
+<h4 id="1-广度优先搜索（BFS）"><a href="#1-广度优先搜索（BFS）" class="headerlink" title="1. 广度优先搜索（BFS）"></a>1. 广度优先搜索（BFS）</h4><p>最简单的盲目搜索过程就是广度优先搜索（breadth-first search）。该过程把所有的算子应用到开始节点以产生一个显示的状态空间图，再把所有可能的算子应用到开始节点的所有直接后继，再到后继的后继，等等。搜索过程一律从开始节点向外扩展。把所有可能的算子称为后继函数。当把后继函数应用到一个节点时，产生一个节点集。一个后继函数的每一次应用称为节点的扩展。</p>
+<blockquote>
+<p> <strong>bfs的性质</strong></p>
+<ul>
+<li>当问题有解时一定能找到解</li>
+<li>当问题为单位耗散值，且问题有解时，一定能找到最优解、</li>
+<li>方法与问题无关，具有通用性</li>
+<li>效率较低</li>
+</ul>
+</blockquote>
+<h5 id="算法流程："><a href="#算法流程：" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
+<li>把起始节点放到OPEN表中(如果该起始节点为一目标节点，则求得一个解答)。</li>
+<li>如果OPEN是个空表，则没有解，失败退出；否则继续。</li>
+<li>把第一个节点(节点n)从OPEN表移出，并把它放入CLOSED的扩展节点表中。 扩展节点n。如果没有后继节点，则转向上述第(2)步。</li>
+<li>把n的所有后继节点放到OPEN表末端，并提供从这些后继节点回到n的指针。</li>
+<li>如果n的任一个后继节点是个目标节点，则找到一个解答，成功退出；否则转向第(2)步。</li>
+</ol>
+<p><img src="/2020/06/13/searchAlg2/20180704091506488" alt="img"></p>
+<h4 id="2-深度优先搜索（DFS）"><a href="#2-深度优先搜索（DFS）" class="headerlink" title="2. 深度优先搜索（DFS）"></a>2. 深度优先搜索（DFS）</h4><p>深度优先总是扩展搜索树的当前边缘节点集 中最深的节点（搜索直接推到最深层）。如果最深层节点扩展完了，就回溯到下一个还有未扩展节点的深度稍浅的节点。</p>
+<blockquote>
+<p>DFS的性质：</p>
+<ul>
+<li>DFS的搜索效率严重依赖于使用的是图搜索还是树搜索<ul>
+<li>如果是图搜索（避免了重复状态和冗余路径），那么DFS在有限状态空间就是完备的。</li>
+<li>如果是树搜索，则不完备，因为会出现死循环（DFS算法本身是没有explored set的）。</li>
+</ul>
+</li>
+<li>不是最优的</li>
+<li>时间复杂度受限于状态空间的规模，为O(bm)，m是任一节点的最大深度。</li>
+<li>空间复杂度很好，为O(bm)。所以DFS在AI的很多领域成为工作主力。</li>
+</ul>
+</blockquote>
+<h5 id="算法流程：-1"><a href="#算法流程：-1" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
+<li>把起始节点放到OPEN表中(如果该起始节点为一目标节点，则求得一个解答)。</li>
+<li>如果OPEN是个空表，则没有解，失败退出；否则继续。</li>
+<li>把第一个节点(节点n)从OPEN表移出，并把它放入CLOSED的扩展节点表中。</li>
+<li>考察节点n是否为目标节点，若是，则找到问题的解，用回溯法求解路径，退出</li>
+<li>如果没有后继节点，则转向上述第(2)步。</li>
+<li>扩展节点n，把n的所有后继节点放到OPEN表前端，并提供从这些后继节点回到n的指针。转向第(2)步。</li>
+</ol>
+<p><img src="/2020/06/13/searchAlg2/20180704103614765" alt="img"></p>
+<h4 id="3-BFS和DFS的比较"><a href="#3-BFS和DFS的比较" class="headerlink" title="3. BFS和DFS的比较"></a>3. BFS和DFS的比较</h4><h5 id="遍历同一组数据"><a href="#遍历同一组数据" class="headerlink" title="遍历同一组数据"></a>遍历同一组数据</h5><p>遍历方式不同，但都可以遍历到，时间相同。</p>
+<p><img src="/2020/06/13/searchAlg2/1.gif" alt></p>
+<h5 id="同时搜索一个数据"><a href="#同时搜索一个数据" class="headerlink" title="同时搜索一个数据"></a>同时搜索一个数据</h5><p>通过下面这个图可以看到深度优先搜索虽然更快的找到一个解但是并不是最优的。</p>
+<p><img src="/2020/06/13/searchAlg2/2.gif" alt></p>
+<h5 id="通过八数码的问题比较两个算法"><a href="#通过八数码的问题比较两个算法" class="headerlink" title="通过八数码的问题比较两个算法"></a>通过八数码的问题比较两个算法</h5><p>八数码问题：在3×3的方格棋盘上，摆放着1到8这八个数码，有1个方格是空的，其初始状态如图1所示，要求对空格执行空格左移、空格右移、空格上移和空格下移这四个操作使得棋盘从初始状态到目标状态。</p>
+<p><img src="/2020/06/13/searchAlg2/11155718-dbdf23882ee74c03a6093e960551428f.png" alt="img"></p>
+<p>广度有点搜索过程：</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613165626335.png" alt="image-20200613165626335"></p>
+<p>深度优先搜索过程：</p>
+<p><img src="/2020/06/13/searchAlg2/image-20200613165801130.png" alt="image-20200613165801130"></p>
+<h4 id="4-其他算法"><a href="#4-其他算法" class="headerlink" title="4. 其他算法"></a>4. 其他算法</h4><h5 id="A-一致代价搜索-UCS"><a href="#A-一致代价搜索-UCS" class="headerlink" title="A . 一致代价搜索(UCS)"></a>A . 一致代价搜索(UCS)</h5><p>一致代价搜索扩展的是路径消耗g(n)（从初始状态到当前状态的路径耗散）最小的节点n。（可以通过将边缘节点组织成按g值排序的队列来实现）。如果所有的连接弧线具有相等的代价,那么等代价算法就简化为宽度优先搜索算法,在等代价搜索算法中,不是描述沿着等长度路径断层进行的扩展,而是描述沿着等代价路径断层进行的扩展。</p>
+<p><strong>算法流程：</strong></p>
+<ol>
+<li>把起始节点S放到未扩展节点表OPEN中。如果此起始节点为一目标节点,则求得一个解,否则令g(S)=0。</li>
+<li>如果OPEN是个空表,则没有解而失败退出。</li>
+<li>从OPEN表中选择一个节点,使其g()为最小。如果有几个节点都合格,那么就要选择一个目标节点作为节点(要是有目标节点的话);否则,就从中选一个作为节点i。把节点i从OPEN表移至扩展节点表 CLOSED中。</li>
+<li>如果节点i为目标节点,则求得一个解。</li>
+<li>扩展节点i。如果没有后继节点,则转向第(2)步。</li>
+<li>对于节点i的每个后继节点j,计算g(j)=g(i)+c(i,j),并把所有后继节点j放进OPEN表。提供回到节点i的指针。</li>
+<li>转向第2步。</li>
+</ol>
+<p><strong>流程图：</strong></p>
+<p><img src="/2020/06/13/searchAlg2/u=2390937715,1397457370&fm=173&app=25&f=JPEG" alt="img"></p>
+<h5 id="B-深度受限"><a href="#B-深度受限" class="headerlink" title="B. 深度受限"></a>B. 深度受限</h5><p>设置界限l来避免DFS在无限状态空间下搜索失败的尴尬情况。即，深度为l的节点被当做最深层节点（没有后继节点）来对待。</p>
+<h5 id="C-迭代加深的深度优先算法-iterative-deepening-search（IDS）"><a href="#C-迭代加深的深度优先算法-iterative-deepening-search（IDS）" class="headerlink" title="C. 迭代加深的深度优先算法 iterative deepening search（IDS）"></a>C. 迭代加深的深度优先算法 iterative deepening search（IDS）</h5><p>IDS = DFS + BFS。<br>可以说是结合了宽度优先和深度优先的优点了：</p>
+<ul>
+<li>空间复杂度：O(bd) （和DFS一样）</li>
+<li>在分支因子有限时完备，在路径待机时节点深度的非递减函数时最优（和BFS一样）。</li>
+</ul>
+<p><img src="/2020/06/13/searchAlg2/20180704105848581" alt="这里写图片描述"></p>
+<h5 id="D-双向搜索"><a href="#D-双向搜索" class="headerlink" title="D. 双向搜索"></a>D. 双向搜索</h5><p>一个从初始状态开始搜，一个从目标状态开始搜，当边缘有交集，就说明找到了解。</p>
+<p>好处：如果两个都用BFS，那么复杂度就变成了O(bd/2)+O(bd/2)，这肯定是要远远小于O(bd)的。所以说减小了复杂度。</p>
+<blockquote>
+<p>参考：</p>
+<p><a href="https://baijiahao.baidu.com/s?id=1621524116688929556&wfr=spider&for=pc" target="_blank" rel="noopener">人工智能盲目搜索三大法则，你要懂！</a></p>
+<p><a href="[https://blog.csdn.net/weixin_39278265/article/details/80906740#%E4%B8%89%E6%97%A0%E4%BF%A1%E6%81%AF%E6%90%9C%E7%B4%A2%E7%9B%B2%E7%9B%AE%E6%90%9C%E7%B4%A2%E7%AD%96%E7%95%A5](https://blog.csdn.net/weixin_39278265/article/details/80906740#三无信息搜索盲目搜索策略)">人工智能第三章（1）——无信息搜索（盲目搜索）</a></p>
+<p><a href="https://www.cnblogs.com/sillypudding/archive/2013/04/11/3014771.html" target="_blank" rel="noopener">人工智能实验4——用盲目搜索求解八数码问题</a></p>
+<p><a href="https://www.cnblogs.com/Cccccz/p/11156000.html" target="_blank" rel="noopener">人工智能07 盲目搜索</a></p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>搜索算法笔记</category>
+      </categories>
+      <tags>
+        <tag>人工智能</tag>
+        <tag>搜索算法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>tensorflow文件操作</title>
+    <url>/2020/06/12/tensorflow-2/</url>
+    <content><![CDATA[<h3 id="读取数据"><a href="#读取数据" class="headerlink" title="读取数据"></a>读取数据</h3><h4 id="2-1-文件读取流程"><a href="#2-1-文件读取流程" class="headerlink" title="2.1 文件读取流程"></a>2.1 文件读取流程</h4><ol>
+<li><p>通用文件读取流程：</p>
+<ul>
+<li><p>文件读取共分为三个流程</p>
+</li>
+<li><p><img src="/2020/06/12/tensorflow-2/image-20200612110657327.png" alt="image-20200612110657327"></p>
+</li>
+<li><p>第一阶段：构建一个文件名队列，读取文件名</p>
+<ul>
+<li>tf.train.string_input_producer(string_tensor,shuffle=True)<ul>
+<li>String_tensor：含有文件名+路径的一阶张量</li>
+<li>num_epochs：过几遍数据，默认无限过数据，就是生成批处理队列如果过大文件不够就再次从头过几遍数据。</li>
+<li>shuffle : 是否随机读数据</li>
+<li>return 文件队列</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>第二阶段：使用读取器在文件名队列中选择文件读取数据，再进行解码</p>
+<ul>
+<li><strong>文件读取与解码</strong><ul>
+<li>阅读器每次只读取一个样本</li>
+<li>文本：<ul>
+<li>读取：tf.TextLineReader</li>
+<li>解码：tf.decode_csv()</li>
+</ul>
+</li>
+<li>图片：<ul>
+<li>读取：tf.WholeFileReader</li>
+<li>解码：<ul>
+<li>tf.image.decode_jepg(contents)</li>
+<li>tf.image.decode_png(contents)<ul>
+<li>将图片解码成uint8张量</li>
+<li>return：张量类型，3-D形状[height,width,channels]</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>二进制文件：<ul>
+<li>读取：tf.FixedLengthRecordReader(record_bytes)<ul>
+<li>读取每个记录是固定数量字节的二进制文件</li>
+</ul>
+</li>
+<li>解码：tf.decode_raw</li>
+</ul>
+</li>
+<li>TFRecords文件:<ul>
+<li>tf.TFRecordReader</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<ol>
+<li>上面所有的读取器都有一个共同的读取方法:read(file_quene),并且都会返回一个tensirs元祖</li>
+<li>由于默认只会读取一个样本，所以如果想要进行批处理，需要使用tf.train.batch或tf.shuffle_batch进行批处理操作，便于之后指定每批次多个样本的训练。</li>
+<li>key,value = 读取器.read(file_quene)<ul>
+<li>key是文件名</li>
+<li>value是一个样本</li>
+</ul>
+</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>在解码阶段，默认所有的内容都解码成tf.uint8类型，如果之后需要转换成指定类型可使用tf.cast()</p>
+</blockquote>
+</li>
+<li><p>第三阶段：批处理阶段，将上一步解码出来的数据放入批处理队列中</p>
+<ul>
+<li>tf.train,batch(tensors,batch_size,num_threads = 1,capacity = 32,name = None)<ul>
+<li>读取指定个数的张量</li>
+<li>tensor：可以使包含张量的列表，批处理的内容放到列表中</li>
+<li>batch_size：从队列中读取批处理大小</li>
+<li>num_threads：进入队列的线程数</li>
+<li>capacity ： 整数，队列中元素的最大数</li>
+<li>return：tensors</li>
+</ul>
+</li>
+<li>tf.train.shuffle_batch</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>线程操作</p>
+<p><img src="/2020/06/12/tensorflow-2/image-20200612121019674.png" alt="image-20200612121019674"></p>
+</li>
+</ol>
+]]></content>
+      <categories>
+        <category>机器学习笔记</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>学习笔记</tag>
+        <tag>Tensorflow</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>问题目录</title>
+    <url>/2020/06/11/202006/</url>
+    <content><![CDATA[<div id="hexo-blog-encrypt" data-wpm="Oh, this is an invalid password. Check and try again, please." data-whm="OOPS, these decrypted content may changed, but you can still have a look.">
+  <div class="hbe-input-container">
+  <input type="password" id="hbePass" placeholder="" />
+    <label for="hbePass">Hey, password is required here.</label>
+    <div class="bottom-line"></div>
+  </div>
+  <script id="hbeData" type="hbeData" data-hmacdigest="b49527322f67e2ec93481fe7ab1ea01e22c9c217977a397a85414acf783431dc">6da395bcc2661c4d53816fcc9cc69d03181c2fbc3c41d89115daf77d71a1b0b0c207263e326a8ee04cf85c222082cdf5130daf79bbd66f609ff860ffcf55b6110462b250283a13918bed303704fb6c906fe01e3a415c3e0c650c4bb9eae7b7ed673aebfeb69ddd5d94375a6ef89164d96f299ead3efc38c7ecc382c5432d11a7d94d0771467a3e62e1709fe00fb6e4475eacd0fb4b27ec4c298ec1014241de1d519ef8b54935753472df5da0f4eb678c3635f264e189a9bdb0ad22665de7b59564cb183c03236b860b12a1ed9fc07d16c3a85bd561984602a0657994fcdea542fbd06142cf9387c53e74bfcf575440a48f13e09a538e8a5bf9e37fecf41d38ea828d08a4f1392338907db0e467569ed0640f22ac97f396d13e3a88b53c64f79ecd9eaaf73e7a550a3c6cc6d91e55d8ea15a862bcecd6a691d89f4e94946a52eae5816f13cc3eff39f8ef5cadf49d2bcc33884757bf266d7ebf3d41ff88593ef0ecf73daf18bfed70ed3ea3204f38c05587ca6b77d9d82c10c03d834b1cf7e652bb6df52aef2bd169f4fa772d21b18d264b9d7414cb4c49d604a145d82f44bb33a0acd580e13f7e5ada22a710a0b175f2dcc4313569b4adb5995e424990643c4faa033f11fd0e5adfe564cf8e516c145ff881fb667551d43f57c38732f47576b87b9ebe83723f51bed4cab165153d0983</script>
+</div>
+<script src="/lib/blog-encrypt.js"></script><link href="/css/blog-encrypt.css" rel="stylesheet" type="text/css">]]></content>
+      <categories>
+        <category>每月状态记录</category>
+      </categories>
+      <tags>
+        <tag>状态</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>decisionTree1</title>
+    <url>/2020/06/11/decisionTree1/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>人工智能笔记</category>
+      </categories>
+      <tags>
+        <tag>人工智能</tag>
+        <tag>决策树</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>搜索算法1</title>
+    <url>/2020/06/10/searchAlg1/</url>
+    <content><![CDATA[<h2 id="搜索问题说明"><a href="#搜索问题说明" class="headerlink" title="搜索问题说明"></a>搜索问题说明</h2><p>搜索问题是求解问题的一种方法。</p>
+<h3 id="1-搜索问题要解决的几个基本问题"><a href="#1-搜索问题要解决的几个基本问题" class="headerlink" title="1. 搜索问题要解决的几个基本问题"></a>1. 搜索问题要解决的几个基本问题</h3><ul>
+<li>是否一定能找到一个解</li>
+<li>找到的解是否为最佳</li>
+<li>时间和空间复杂度如何</li>
+<li>是否终止运行或者陷入一个死循环</li>
+</ul>
+<h3 id="2-搜索的方向"><a href="#2-搜索的方向" class="headerlink" title="2. 搜索的方向"></a>2. 搜索的方向</h3><ul>
+<li>数据驱动：从初始状态出发的正向搜索</li>
+<li>目的驱动：从目的状态出发的逆向搜索</li>
+<li>双向搜索：两面同时搜索</li>
+</ul>
+<h3 id="3-一般的解题流程"><a href="#3-一般的解题流程" class="headerlink" title="3. 一般的解题流程"></a>3. 一般的解题流程</h3><p><img src="/2020/06/10/searchAlg1/image-20200610234626613.png" alt="image-20200610234626613"></p>
+<h3 id="4-一般的算法"><a href="#4-一般的算法" class="headerlink" title="4. 一般的算法"></a>4. 一般的算法</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">1. G&#x3D;G0 (G0&#x3D;s), OPEN:&#x3D;(s);</span><br><span class="line">2. CLOSED:&#x3D;( );</span><br><span class="line">3. LOOP: IF OPEN&#x3D;( ) THEN EXIT(FAIL);</span><br><span class="line">4. n:&#x3D;FIRST(OPEN), REMOVE(n, OPEN),</span><br><span class="line">	ADD(n, CLOSED);</span><br><span class="line">5. IF GOAL(n) THEN EXIT(SUCCESS);</span><br><span class="line">6. EXPAND(n)→&#123;mi&#125;, G:&#x3D;ADD(mi, G);</span><br><span class="line">7. 标记和修改指针：</span><br><span class="line">	ADD(mj, OPEN), 并标记mj到n的指针；</span><br><span class="line">	计算是否要修改mk、ml到n的指针；</span><br><span class="line">	计算是否要修改ml到其后继节点的指针；</span><br><span class="line">8. 对OPEN中的节点按某种原则重新排序；</span><br><span class="line">9. GO LOOP；</span><br></pre></td></tr></table></figure>
+
+<h2 id="回溯搜索算法"><a href="#回溯搜索算法" class="headerlink" title="回溯搜索算法"></a>回溯搜索算法</h2><h3 id="1-回溯策略"><a href="#1-回溯策略" class="headerlink" title="1. 回溯策略"></a>1. 回溯策略</h3><p>​        回溯是五大常用算法策略之一，它的核心思想其实就是将解空间看作是一棵树的结构，从树根到其中一个叶子节点的路径就是一个可能的解，根据约束条件，即可得到满足要求的解。求解问题时，发现到某个节点而不满足求解的条件时，就“回溯”返回，尝试别的路径。回溯法是一种选优搜索法，按选优条件向前搜索，以达到目标。</p>
+<p>​        回溯法师暴力搜索法中的一种，采用试错的思想，尝试分布的去解决一个问题。在分布解决问题的过程中发现得不到正确解答的过程中，将取消上一步或几步的操作，再通过其他方法寻找解决答案。回溯法用最简单的递归的方法来实现。</p>
+<h4 id="问题的解空间"><a href="#问题的解空间" class="headerlink" title="问题的解空间"></a>问题的解空间</h4><p>​        在用回溯法解决问题时，应先明确定义问题的解空间。解空间就是一个问题所有的可能性，问题的解空间至少包含问题的一个最优解。</p>
+<h4 id="回溯法的基本思想"><a href="#回溯法的基本思想" class="headerlink" title="回溯法的基本思想"></a>回溯法的基本思想</h4><p>​        在确定解空间后，回溯法从根结点出发，以深度优先搜索方式搜索整个解空间。递归的在解空间进行搜索，直到找到所要求的解或解空间中所有解都被遍历。</p>
+<blockquote>
+<p><strong>回溯法解题的三个步骤：</strong></p>
+<ol>
+<li>针对所给的问题，定义问题的解空间</li>
+<li>确定易于搜索的解空间结构</li>
+<li>以深度优先方式搜索解空间，并在搜索过程中调用剪枝函数避免无效搜索。</li>
+</ol>
+</blockquote>
+<h4 id="回溯法的实现"><a href="#回溯法的实现" class="headerlink" title="回溯法的实现"></a>回溯法的实现</h4><ol>
+<li>递归回溯</li>
+</ol>
+<p>使用递归实现回溯法一般函数结构如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 递归回溯函数，t代表当前的递归深度</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">Bcktract</span><span class="params">(t)</span>:</span></span><br><span class="line">    <span class="comment"># 遍历到解就将解返回</span></span><br><span class="line">    <span class="keyword">if</span> t &gt; n:</span><br><span class="line">        <span class="keyword">return</span> X</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># f(n,t)和g(n,t)分别代表当前节点未处理子树的初始编号和终止编号</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(f(n,t),g(n,t)):</span><br><span class="line">            <span class="comment"># 把当前节点加入返回集合X中</span></span><br><span class="line">            x[t] = h(i)</span><br><span class="line">            <span class="comment"># 如果当前节点满足条件，再在当前节点的基础上进行递归，不满足条件就直接继续下次循环</span></span><br><span class="line">            <span class="comment"># constarint(t) 和 Bound(t)分别为约束函数和限界函数，这两个函数的作用就是剪枝函数</span></span><br><span class="line">            <span class="keyword">if</span> constarint(t) <span class="keyword">and</span> Bound(t):</span><br><span class="line">                Bcktract(t+<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>迭代回溯</li>
+</ol>
+<p>使用非递归的方式实现回溯法的函数结构如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">IterativeBacktrack</span><span class="params">()</span>:</span></span><br><span class="line">    t = <span class="number">1</span></span><br><span class="line">    <span class="keyword">while</span>(t &gt; <span class="number">0</span>):</span><br><span class="line">        <span class="comment"># 当f(n,t) &lt;= g(n,t)时说明当前节点下一层还没有遍历</span></span><br><span class="line">        <span class="keyword">if</span> (f(n,t) &lt;= g(n,t)):</span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> range(f(n,t),g(n,t)):</span><br><span class="line">            	<span class="comment"># 把当前节点加入返回集合X中</span></span><br><span class="line">            	x[t] = h(i)</span><br><span class="line">            	<span class="comment"># 如果当前节点满足条件，再在当前节点的基础上进行递归，不满足条件就直接继续下次循环</span></span><br><span class="line">            	<span class="comment"># constarint(t) 和 Bound(t)分别为约束函数和限界函数，这两个函数的作用就是剪枝函数</span></span><br><span class="line">                <span class="comment"># 两个函数同时满足说明本层的i节点是满足要求的</span></span><br><span class="line">            	<span class="keyword">if</span> constarint(t) <span class="keyword">and</span> Bound(t):</span><br><span class="line">                    <span class="keyword">if</span> (Solution(t)):</span><br><span class="line">                        <span class="keyword">return</span> x</span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        t = t+<span class="number">1</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            t = t - <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>算法复杂度</li>
+</ol>
+<p>用回溯法解体的一个显著特征是在搜索过程中动态产生问题的解空间。在任何时刻，算法只保存从根节点到当前节点（扩展节点）的路径。如果解空间树从根节点到叶节点的最长路径的长度为h(n)，则回溯法所需的计算空间通常为O(h(n))。而显式地存储整个解空间则需要O(2^h(n))或O(h(n)!)内存空间。</p>
+<h3 id="2-回溯算法存在的问题"><a href="#2-回溯算法存在的问题" class="headerlink" title="2. 回溯算法存在的问题"></a>2. 回溯算法存在的问题</h3><ol>
+<li><p>深度问题</p>
+<img src="/2020/06/10/searchAlg1/image-20200611231358393.png" alt="image-20200611231358393" style="zoom:80%;">
+</li>
+<li><p>死循环问题</p>
+<p><img src="/2020/06/10/searchAlg1/image-20200611231430823.png" alt="image-20200611231430823"></p>
+</li>
+<li><p>解决办法</p>
+<ul>
+<li>对搜索深度加以限制</li>
+<li>记录从初始状态到当前状态得路径</li>
+</ul>
+</li>
+</ol>
+<h3 id="3-回溯法举例"><a href="#3-回溯法举例" class="headerlink" title="3. 回溯法举例"></a>3. 回溯法举例</h3><p><strong>皇后问题：</strong></p>
+<p>​        在4*4的棋盘中，没行放一个棋子，要求每个棋子的是其所在行、所在列、所在斜行的唯一的一个。</p>
+<p><strong>解题方法：</strong></p>
+<p>​        <img src="/2020/06/10/searchAlg1/search-1.gif" alt="search-1"></p>
+<p>算法代码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">is_attack</span><span class="params">(queue, x, y)</span>:</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(x):</span><br><span class="line">        <span class="keyword">if</span> queue[i] == y <span class="keyword">or</span> abs(x - i) == abs(queue[i] - y):</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 按列来摆放皇后</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">put_position</span><span class="params">(n, queue, col)</span>:</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(n):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> is_attack(queue, col, i):</span><br><span class="line">            queue[col] = i</span><br><span class="line">            <span class="keyword">if</span> col == n - <span class="number">1</span>:    <span class="comment"># 此时最后一个皇后摆放好了，打印结果。</span></span><br><span class="line">                print(queue)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                put_position(n, queue, col + <span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">n = <span class="number">4</span>       <span class="comment"># 这里是n 就是n皇后</span></span><br><span class="line"><span class="comment"># 存储皇后位置的一维数组，数组下标表示皇后所在的列，下标对应的值为皇后所在的行。</span></span><br><span class="line">queue = [<span class="literal">None</span> <span class="keyword">for</span> i <span class="keyword">in</span> range(n)]</span><br><span class="line">put_position(n, queue, <span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<p><img src="/2020/06/10/searchAlg1/image-20200613094915139.png" alt="image-20200613094915139"></p>
+]]></content>
+      <categories>
+        <category>搜索算法笔记</category>
+      </categories>
+      <tags>
+        <tag>人工智能</tag>
+        <tag>搜索算法</tag>
+        <tag>回溯策略</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Tensorflow框架介绍</title>
     <url>/2020/06/09/tensorflow-1/</url>
     <content><![CDATA[<h3 id="Tensorflow框架介绍"><a href="#Tensorflow框架介绍" class="headerlink" title="Tensorflow框架介绍"></a>Tensorflow框架介绍</h3><h4 id="1-1-TF数据流图"><a href="#1-1-TF数据流图" class="headerlink" title="1.1 TF数据流图"></a>1.1 TF数据流图</h4><h5 id="Tensorflow结构分析"><a href="#Tensorflow结构分析" class="headerlink" title="Tensorflow结构分析"></a>Tensorflow结构分析</h5><blockquote>
@@ -501,9 +903,9 @@
         <category>机器学习笔记</category>
       </categories>
       <tags>
-        <tag>神经网络</tag>
-        <tag>人工智能</tag>
         <tag>机器学习</tag>
+        <tag>人工智能</tag>
+        <tag>神经网络</tag>
       </tags>
   </entry>
   <entry>
@@ -559,8 +961,8 @@
       </categories>
       <tags>
         <tag>leetcode</tag>
-        <tag>位运算</tag>
         <tag>简单难度</tag>
+        <tag>位运算</tag>
       </tags>
   </entry>
   <entry>
@@ -665,9 +1067,9 @@
       <tags>
         <tag>leetcode</tag>
         <tag>算法</tag>
-        <tag>简单难度</tag>
         <tag>哈希</tag>
         <tag>递归</tag>
+        <tag>简单难度</tag>
       </tags>
   </entry>
   <entry>
@@ -692,9 +1094,9 @@
         <category>机器学习笔记</category>
       </categories>
       <tags>
-        <tag>神经网络</tag>
-        <tag>人工智能</tag>
         <tag>机器学习</tag>
+        <tag>人工智能</tag>
+        <tag>神经网络</tag>
       </tags>
   </entry>
 </search>
