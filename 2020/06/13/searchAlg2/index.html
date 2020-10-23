@@ -9,7 +9,7 @@
     
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>
-    搜索算法2 |  Kind &amp; Lucky
+    搜索算法2-状态和状态空间、盲目搜索 |  Kind &amp; Lucky
   </title>
   <meta name="generator" content="hexo-theme-ayer">
   
@@ -53,7 +53,7 @@
     <header class="article-header">
        
 <h1 class="article-title sea-center" style="border-left:0" itemprop="name">
-  搜索算法2
+  搜索算法2-状态和状态空间、盲目搜索
 </h1>
  
 
@@ -218,7 +218,8 @@
 <li>效率较低</li>
 </ul>
 </blockquote>
-<h5 id="算法流程："><a href="#算法流程：" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
+<p> <strong>算法流程</strong>：</p>
+<ol>
 <li>把起始节点放到OPEN表中(如果该起始节点为一目标节点，则求得一个解答)。</li>
 <li>如果OPEN是个空表，则没有解，失败退出；否则继续。</li>
 <li>把第一个节点(节点n)从OPEN表移出，并把它放入CLOSED的扩展节点表中。 扩展节点n。如果没有后继节点，则转向上述第(2)步。</li>
@@ -240,7 +241,7 @@
 <li>空间复杂度很好，为O(bm)。所以DFS在AI的很多领域成为工作主力。</li>
 </ul>
 </blockquote>
-<h5 id="算法流程：-1"><a href="#算法流程：-1" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
+<h5 id="算法流程："><a href="#算法流程：" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
 <li>把起始节点放到OPEN表中(如果该起始节点为一目标节点，则求得一个解答)。</li>
 <li>如果OPEN是个空表，则没有解，失败退出；否则继续。</li>
 <li>把第一个节点(节点n)从OPEN表移出，并把它放入CLOSED的扩展节点表中。</li>
@@ -369,6 +370,15 @@
   
   
   <nav class="article-nav">
+    
+      <a href="/2020/06/13/searchAlg3/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            搜索算法3-启发式搜索
+          
+        </div>
+      </a>
     
     
       <a href="/2020/06/12/tensorflow-2/" class="article-nav-link">

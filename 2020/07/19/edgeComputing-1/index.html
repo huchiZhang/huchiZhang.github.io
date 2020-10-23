@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-CN">
+
+
+<head>
+  <meta charset="utf-8" />
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    边缘计算综述 |  Kind &amp; Lucky
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/icon.svg" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+  
+  
+
+  
+
+<link rel="alternate" href="/atom.xml" title="Kind & Lucky" type="application/atom+xml">
+</head>
+
+</html>
+
+<body>
+  
+  <canvas width="1777" height="841" style="position: fixed; left: 0px; top: 0px; z-index: 999; pointer-events: none;"></canvas>
+  
+  <div id="app">
+    <main class="content on">
+      <section class="outer">
+  <article id="post-edgeComputing-1" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  边缘计算综述
+</h1>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/07/19/edgeComputing-1/" class="article-date">
+  <time datetime="2020-07-19T02:15:45.000Z" itemprop="datePublished">2020-07-19</time>
+</a>
+      
+      
+      
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> 字数统计:</span>
+            <span class="post-count">6.2k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> 阅读时长≈</span>
+            <span class="post-count">21 分钟</span>
+        </span>
+    </span>
+</div>
+
+      
+    </div>
+    
+
+    
+    
+    <div class="tocbot"></div>
+
+
+
+
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <blockquote>
+<p>论文名称：A Survey on Mobile Edge Computing: The Communication Perspective</p>
+<p>翻译名称：移动边缘计算研究：通信视角</p>
+<p>作者：<a href="https://ieeexplore.ieee.org/author/37085508893" target="_blank" rel="noopener">Yuyi Mao </a>; <a href="https://ieeexplore.ieee.org/author/37085636547" target="_blank" rel="noopener">Changsheng You </a><a href="https://orcid.org/0000-0003-3245-9361" target="_blank" rel="noopener"> </a>; <a href="https://ieeexplore.ieee.org/author/37086056429" target="_blank" rel="noopener">Jun Zhang </a><a href="https://orcid.org/0000-0002-5222-1898" target="_blank" rel="noopener"> </a>; <a href="https://ieeexplore.ieee.org/author/37290266200" target="_blank" rel="noopener">Kaibin Huang </a>; <a href="https://ieeexplore.ieee.org/author/37273525100" target="_blank" rel="noopener">Khaled B. Letaief</a></p>
+<p>发表时间： 25 August 2017</p>
+<p>发表期刊： <a href="https://ieeexplore.ieee.org/xpl/RecentIssue.jsp?punumber=9739" target="_blank" rel="noopener">IEEE Communications Surveys &amp; Tutorials</a></p>
+<p>dio : <a href="https://doi.org/10.1109/COMST.2017.2745201" target="_blank" rel="noopener">10.1109 / COMST.2017.2745201</a></p>
+<p>关键词：移动边缘计算，雾计算，移动云计算，计算分流，资源管理，绿色计算</p>
+</blockquote>
+<h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>在物联网和5G通信的愿景驱动下，近年来，移动计算发生了从集中式移动云计算向移动边缘计算（MEC）的转变。  MEC的主要功能是将移动计算，网络控制和存储推向网络边缘（例如基站和接入点），以便在资源受限的移动设备上启用计算密集型和延迟关键型应用程序。  MEC承诺将显着减少延迟和移动能源消耗，应对实现5G愿景的关键挑战。 MEC所承诺的成果已激发了学术界和工业界在开发该技术方面的广泛努力。MEC研究的主要目的是无缝融合无线通信和移动计算这两个领域，从而产生了各种各样的新设计，从计算分流技术到网络体系结构，不一而足。本文提供了对最新的MEC研究的全面综述，重点是联合无线电和计算资源管理。我们还将讨论有关MEC研究的一系列问题，挑战和未来的研究方向，包括MEC系统部署，启用缓存的MEC，MEC的移动性管理，绿色MEC以及具有隐私意识的MEC。这些方向的进步将促进MEC从理论到实践的转变。最后，我们介绍了有关MEC的最新标准化工作以及一些典型的MEC应用场景。</p>
+<h2 id="1-引言"><a href="#1-引言" class="headerlink" title="1. 引言"></a>1. 引言</h2><p>近十年来，云计近十年来，云计算已成为一种新的计算范式。它的愿景是将云计算，存储和网络管理集中化，指的是数据中心，骨干IP网络和蜂窝核心网络[1]，[2]。算已成为一种新的计算范式。它的愿景是将云计算，存储和网络管理集中化，指的是数据中心，骨干IP网络和蜂窝核心网络[1]，[2]。然后可以利用云中可用的大量资源来提供弹性计算力和存储以支持资源受限的最终用户设备。云计算一直在推动许多互联网公司的快速发展。例如，云业务已成为亚马逊最赚钱的行业[3]，而Dropbox的成功很大程度上取决于亚马逊的云服务。</p>
+<p>然而，近年来，随着云的功能越来越趋向网络边缘[4]，计算领域出现了新趋势。据估计，在不久的将来将部署数百亿个Edge设备，并且按照摩尔定律，它们的处理器速度将呈指数级增长。收获分布在网络边缘的大量空闲计算能力和存储空间可以产生足够的容量，以在移动设备上执行计算密集型和延迟关键型任务。这种范例称为移动边缘计算（MEC）[5]。尽管长的传播延迟仍然是云计算的主要缺点，但具有接近访问权限的MEC被广泛认为是实现下一代Internet（如触觉Internet（具有毫秒级反应时间））的各种愿景的关键技术[6]，物联网（IoT）[7]和Internet of Me[8]。当前，来自学术界和工业界的研究人员已经通过追求移动计算和无线通信两个学科的技术和理论的融合来积极地推广MEC技术。本文旨在从传播的角度对这一年轻领域的关键研究进展进行综述。我们还将提出一个研究前景，其中包含对MEC充满希望的研究方向的集合。</p>
+<h4 id="A-5G移动计算：从云到边缘"><a href="#A-5G移动计算：从云到边缘" class="headerlink" title="A.5G移动计算：从云到边缘"></a>A.5G移动计算：从云到边缘</h4><pre><code>&gt; MEC有点像边缘式的大数据处理平台，相当于把远端数据中心的离散为若干个小数据中心置于网络边缘去靠近用户一侧，可以视为一台运行在边缘的专有ECS。同时，由于MEC跑在网络边缘，因此其对网络其他部分的依赖程度并不高，并且可以实时获取基站等网络基础设施提供的信息，让链路的可感知、自适应成为可能，结合自身的数据分析能力来提升用户体验。</code></pre><p>​        在过去的十年中，移动设备的普及和移动Internet流量的指数增长一直在推动无线通信和网络的巨大进步。特别是，小蜂窝网络，多天线和毫米波通信的突破有望为用户提供下一代系统中的千兆无线接入[9]。高速率和高度可靠的空中接口允许在远程云数据中心运行移动设备的计算服务，这导致了研究领域称为移动云计算（MCC）。但是，MCC有一个固有的局限性，即从最终用户到远程云中心的传播距离很长，这会导致移动应用程序过高的延迟。因此，MCC不足以满足对延迟至关重要的各种新兴移动应用程序的需求。当前，正在设计新的网络架构，以更好地将云计算的概念集成到移动网络中，这将在本文的后半部分进行讨论。</p>
+<p>​        在5G无线系统中，将部署超密集型边缘设备，包括小型蜂窝基站（BS），无线接入点（AP），笔记本电脑，平板电脑和智能手机，其计算能力可与计算机媲美服务器十年前。这样，大量的设备将在每个时刻处于空闲状态。尤其是，它将在网络边缘收获大量可用的计算和存储资源，这将足以启用无处不在的移动计算。简而言之，从1G到4G的无线系统的主要目标是追求越来越高的无线速度，以支持从以语音为中心的流量向以多媒体为中心的流量过渡。随着无线速度接近有线通信的速度，5G的使命有所不同，也更加复杂，即支持ICT和互联网的爆炸性发展。在功能方面，5G系统将支持通信，计算，控制和内容交付（4C）。在应用方面，针对5G的各种新应用和服务正在涌现，例如实时在线游戏，虚拟现实（VR）和超高清（UHD）视频流，这些都需要空前的高访问速度和低延迟。在过去的十年中，也出现了下一代互联网的不同愿景，包括物联网，触觉互联网（具有毫秒级延迟），Me-of-Me和社交网络。尤其是，思科曾预测，到2020年，将有大约500亿个IoT设备（例如传感器和可穿戴设备）添加到Internet，其中大多数的计算，通信和存储资源有限，并且必须依赖云或边缘设备以增强其功能[10]。现在，人们普遍同意，仅依靠云计算不足以实现5G中计算和通信的毫秒级延迟。此外，最终用户和远程云之间的数据交换将使数据海啸饱和并关闭回程网络。因此，必须使用MEC来补充云计算，从而将流量，计算和网络功能推向网络边缘。这也与下一代网络的一个关键特征相吻合，即信息在本地越来越多地产生并在本地消费，这是由于物联网，社交网络和内容交付中应用的迅猛发展所致[4]。</p>
+<p>​        MEC的概念最早是由欧洲电信标准协会（ETSI）于2014年提出的，并被定义为“在移动用户附近提供无线电接入网（RAN）内的IT和云计算功能”的新平台[5]。MEC的原始定义是指使用BS卸载移动设备中的计算任务。最近，思科提出了雾计算的概念，将其作为MEC的一种通用形式，其中边缘设备的定义范围越来越广，从智能手机到机顶盒[11]。这导致了一个新的研究领域雾计算与网络的出现[4], [12], [13]，但是，雾计算和MEC的领域是重叠的，术语经常互换使用。在本文中，我们将重点放在MEC上，但是讨论的许多技术也适用于雾计算。</p>
+<p>​        MEC基于虚拟化平台实施，该平台利用了网络功能虚拟化（NFV），以信息为中心的网络（ICN）和软件定义的网络（SDN）的最新进展。具体来说，NFV通过创建用于同时执行不同任务或操作不同网络功能的多个虚拟机（VM），使单个边缘设备能够向多个移动设备提供计算服务[15]。另一方面，ICN为MEC提供了另一种端到端服务识别范例，从以主机为中心转变为以信息为中心，以实现上下文感知计算。最后，SDN允许MEC网络管理员通过功能抽象来管理服务，从而实现可扩展的动态计算[16]。  MEC研究的主要重点是开发这些通用网络技术，以便可以在网络边缘实施这些技术。</p>
+<p>​        通过将它们的计算密集型任务卸载到MEC服务器以执行云，越来越多的新兴移动应用程序将从MEC中受益。在下面，我们将提供两个示例来说明MEC的基本原理。一种是如图1所示的人脸识别应用程序，通常由五个主要计算组件组成，包括图像采集，人脸检测，预处理，特征提取和分类[17]。虽然需要在移动设备上执行图像获取组件以支持用户界面，但其他组件可以卸载以进行云处理，其中包含复杂的计算，例如信号处理和机器学习（ML）算法。可以利用网络边缘的丰富资源的另一种流行的应用程序流是增强现实（AR）应用程序，它可以将计算机生成的数据与物理现实相结合。如图2所示，AR应用程序具有五个关键组件[18]，[19]，即视频源（从移动相机获取原始视频帧），跟踪器（跟踪用户的位置），映射器（用于构建环境模型），对象识别器（用于识别环境中的已知对象），以及渲染器（准备处理后的帧以供显示）。在这些组件中，视频源和渲染器应在本地执行，而计算量最大的组件（即跟踪器，映射器和对象识别器）可以卸载以执行云。这样，移动用户可以享受到MEC带来的各种好处，例如减少等待时间和节省能源，这将在下一部分中详细介绍。</p>
+<p><img src="/2020/07/19/edgeComputing-1/image-20200719160329195.png" alt="image-20200719160329195"></p>
+<p><img src="/2020/07/19/edgeComputing-1/image-20200719160309311.png" alt="image-20200719160309311"></p>
+<h4 id="B-移动边缘计算与移动云计算"><a href="#B-移动边缘计算与移动云计算" class="headerlink" title="B.移动边缘计算与移动云计算"></a>B.移动边缘计算与移动云计算</h4><p>​        如表I所示，在计算服务器，与最终用户的距离和典型延迟等方面，MEC和MCC系统之间存在显着差异。与MCC相比，MEC具有实现较低延迟，节省移动设备能源，支持上下文感知计算，并增强移动应用程序的隐私和安全性。下面通过一些示例和应用简要描述这些优点。</p>
+<p><img src="/2020/07/19/edgeComputing-1/image-20200719162456007.png" alt="image-20200719162456007"></p>
+<p>​        低延迟：移动服务的延迟是三个部分的集合：传播，计算和通信延迟，分别取决于传播距离，计算能力和数据速率。首先，对于密集小蜂窝网络或设备到设备（D2D）传输，MEC的信息传播距离通常为数十米，并且一般情况下不超过1公里。相比之下，云计算需要从最终用户到核心网络或数据中心中的节点的传输，传输距离从几十公里到跨大洲的距离。这导致MEC的传播延迟比MCC的传播延迟短得多。其次，MCC要求信息通过包括无线电访问网络，回程网络和Internet在内的多个网络传递，在这些网络中，流量控制，路由和其他网络管理操作可能会导致过多的延迟。由于通信限制在网络边缘，因此MEC摆脱了这些问题。最后，对于计算延迟，云具有强大的计算能力，比边缘设备（例如，BS）的计算能力高几个数量级。但是，与边缘设备相比，云必须由更多的用户共享，从而减少了他们在计算延迟方面的差距。此外，现代的BS功能强大，足以运行高度复杂的计算程序。例如，BS的边缘云具有比运行“使命召唤13”（一种流行的射击游戏）的最低要求（例如，3.3  GHz以上的CPU，8GB  RAM，70GB存储空间）高102-104倍的计算能力。通常，实验表明，MCC的总等待时间在30到100毫秒之间[30]。这对于许多延迟关键的移动应用程序是不可接受的，例如实时在线游戏，虚拟体育和自动驾驶，这些应用程序可能需要触觉速度，延迟时间接近1ms  [36]。相比之下，通过短的传播距离和简单的协议，MEC可以为关键延迟5G应用实现触觉级延迟。</p>
+<p>​        <strong>移动节能</strong>：由于其紧凑的形式，物联网设备的能量存储有限，但有望配合并执行复杂的任务，例如监视，人群感应和健康监测[37]。考虑到即使不是不可能的，频繁的电池充电/更换也是不切实际的，为数以百亿计的IoT设备供电仍然是设计IoT的关键挑战。通过有效支持计算分流，MEC是延长物联网设备电池寿命很有前途的解决方案。具体来说，可以将计算密集型任务从物联网设备转移到边缘设备，以减少其能耗。实验证明了通过计算分流实现的显着节能，例如，对于多媒体应用eyeDentify  [38]，完成多达44倍的计算负荷；对于不同的AR应用，电池寿命增加30-50％[39]。</p>
+<p>​        <strong>上下文感知</strong>：区分MEC和MCC的另一个关键功能是MEC服务器具有利用边缘设备与最终用户的接近度来跟踪其实时信息（例如行为，位置和环境）的能力。基于此类信息的推理可以将上下文感知服务交付给最终用户[40]-[42]。例如，对于博物馆的视频指南，AR应用程序可以根据用户在博物馆中的位置来预测用户的兴趣，从而自动交付与艺术品和古董有关的内容[43]。另一个示例是CTrack系统，该系统使用BS指纹来跟踪和预测大量用户的轨迹，以进行交通监控，导航和路由以及个性化的行程管理[44]。</p>
+<p>​        <strong>增强隐私/安全性</strong>：与MCC相比，增强移动应用程序的隐私和安全性的功能也是MEC带来的诱人优势。在MCC系统中，云计算平台是远程公共大型数据中心，例如Amazon  EC2和Microsoft  Azure，由于其用户信息资源的高度集中而容易受到攻击。另外，用户数据的所有权和管理权在MCC中是分开的，这会引起私人数据泄漏和丢失的问题[45]。最近的边缘服务器的使用提供了一种有希望的解决方案来规避这些问题。一方面，由于分布式部署，小规模性质以及有价值信息的集中度降低，MEC服务器成为安全攻击目标的可能性大大降低。其次，许多MEC服务器可以是私有的cloudlet，这将减轻对信息泄漏的担忧。需要最终用户和服务器之间进行敏感信息交换的应用程序将从MEC中受益。例如，MEC的企业部署可以帮助避免将受限制的数据和资料上传到远程数据中心，因为企业管理员本身可以管理授权，访问控制并分类不同级别的服务请求，而无需外部单元[46]。</p>
+<h4 id="C-论文动机与概述"><a href="#C-论文动机与概述" class="headerlink" title="C.论文动机与概述"></a>C.论文动机与概述</h4><p>​        MEC已成为实现物联网和5G愿景的关键支持技术[15]，[47]，[48]。  MEC研究位于移动计算和无线通信的交汇处，在这里，许多研究机会的存在导致了高度活跃的领域。近年来，来自学术界和行业的研究人员已经研究了与MEC相关的广泛问题，包括系统和网络建模，最佳控制，多用户资源分配，实现和标准化。随后，通过几个已发表调查文章，以提供不同重点的MEC领域概述，包括系统模型，体系结构，启用技术，应用程序，边缘缓存，边缘计算分流以及与IoT和5G的连接[26]，[27]，[49]  ] – [55]。其主题概述如下。  [49]中介绍了MEC平台的概述，其中讨论了不同的现有MEC框架，体系结构及其应用场景，包括FemtoCloud，REPLISM和ME-VOLTE。  [50]的调查着重于MEC中的使能技术，例如云计算，VM，NFV和SDN，它们允许灵活的控制和多租户支持。刘等。  [51]对各种MEC应用程序，服务模型，部署方案以及网络体系结构进行了分类。  [52]中的调查提供了MEC应用程序的分类法，并确定了研究和开发的潜在方向，例如内容缩放，本地连接，扩充以及数据聚合和分析。在[27]中，对新兴的边缘计算，缓存和通信（3C）技术进行了研究，显示了3C的融合。此外，还讨论了MEC的关键推动因素，例如云技术，SDN  /  NFV和智能设备。文献[53]中的调查集中在针对MEC的计算分流中的三个关键设计问题，即分流决策，计算资源分配和移动性管理。另外，在[54]中通过参考物联网用例的MEC部署示例突出了MEC在物联网中的作用，即创建新的物联网服务。文献[26]中还介绍了5G网络中MEC的几种有吸引力的使用场景，包括移动边缘编排，协作缓存和处理以及多层干扰消除。此外，在[55]中从应用程序开发人员，服务提供商和网络设备供应商的角度讨论了与MEC相关的潜在商机。鉴于先前的工作，仍然缺乏系统的调查文章，其中将移动计算和无线通信深度融合，从而对特定的MEC研究结果进行了全面而具体的讨论，这激发了当前的工作。本文在以下方面与现有的MEC调查有所不同。首先，本次调查总结了MEC中现有的计算和通信模型，以促进理论分析，并为研究人员和从业人员提供快速参考。接下来，我们对MEC的联合无线电和计算资源分配进行全面的文献综述，这是本文的主题。本文中的文献综述将对现有的有关MEC的调查文献提供有价值的补充，这可以使研究界的读者受益，以建立对MEC系统的最新资源管理技术的系统理解。此外，我们从交流的角度确定并讨论了MEC中的一些研究挑战和机遇，并针对这些挑战和潜在机遇进行了阐述。另外，为弥合MEC的理论研究与实际实施之间的差距，然后将介绍MEC的最新标准化工作和使用场景。</p>
+<p>​        论文安排如下。在第二部分中，我们总结了基本的MEC模型，包括计算任务，通信，移动设备和MEC服务器，以此为基础开发了MEC延迟和能耗模型。接下来，在第三部分中将进行全面的综述，重点是针对不同类型的MEC系统（包括单用户，多用户系统以及多服务器MEC）的无线电和计算资源联合管理研究。随后，在第IV节中讨论了一组关键研究问题和未来方向，包括1）部署MEC系统，2）启用缓存的MEC，3）MEC的移动性管理，4）绿色MEC以及5）安全和隐私问题在MEC中。具体来说，我们分析每个研究问题的设计挑战，并提供几种潜在的研究方法。最后，在第五节中对MEC的标准化工作和应用进行了审查和讨论，随后在第六节中作了总结。为了便于参考，我们在表II中总结了经常在本文中使用的首字母缩写词的定义。</p>
+<h2 id="2-MEC计算和通信模型"><a href="#2-MEC计算和通信模型" class="headerlink" title="2. MEC计算和通信模型"></a>2. MEC计算和通信模型</h2><p>​        在本节中，将介绍典型MEC系统的关键计算/通信组件的系统模型。这些模型提供了将各种功能和操作抽象为优化问题并促进理论分析的机制，如以下各节所述。</p>
+<p>​        对于图3所示的MEC系统，关键组件包括移动设备（也称为最终用户，客户端，服务订户）和MEC服务器。  MEC服务器通常是小型数据中心，由云和电信运营商与最终用户紧密部署，可以与无线AP并置。通过网关，服务器通过Internet连接到数据中心。移动设备和服务器由空中接口隔开，在空中接口可以使用高级无线通信和联网技术建立可靠的无线链接。在以下小节中，我们将介绍针对MEC系统不同组件的模型，包括用于计算任务，无线通信信道和网络的模型，以及移动设备和MEC服务器的计算延迟和能耗模型。</p>
+<p><img src="/2020/07/19/edgeComputing-1/image-20200719163808312.png" alt="image-20200719163808312"></p>
+<h4 id="A-计算任务模型"><a href="#A-计算任务模型" class="headerlink" title="A.计算任务模型"></a>A.计算任务模型</h4><p>​        在计算任务的建模过程中，有各种参数起着至关重要的作用，包括等待时间，带宽利用率，上下文感知，通用性和可伸缩性[22]。尽管为任务开发准确的模型非常复杂，但是存在一些简单的模型，这些模型是合理的并且具有数学易处理性。在本小节中，我们介绍两个在MCC和MEC的现有文献中普遍使用的计算任务模型，分别对应于二进制和部分计算分流。</p>
+<p>​        1）<strong>二进制卸载的任务模型</strong>：高度集成或相对简单的任务无法分区，必须整体在移动设备上执行或卸载到MEC服务器，称为二进制卸载。这样的任务可以用三场符号A（L，τd，X）表示。该常用符号包含以下信息：任务输入数据大小L（以位为单位），完成期限τd（以秒为单位）以及计算工作量/强度X（以每位CPU周期为单位）。这些参数与应用程序的性质有关，可以通过任务分析器[56]，[57]进行估算。这三个参数的使用不仅捕获了移动应用程序的基本属性，例如计算和通信需求，而且还简化了对执行等待时间和能耗性能的简单评估（将在II-C节中进行分析）。</p>
+<p>​        要求任务A（L，τd，X）必须在硬期限τd之前完成。该模型也可以推广到软截止期限要求，该要求允许一小部分任务在τd之后完成[58]。在这种情况下，将执行1个单位任务输入数据所需的CPU周期数建模为随机变量X。具体来说，定义正整数x0当p为大于0远小于1的小数时满足Pr(X&gt;x0)&lt;=p，</p>
+
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+        <div class="declare">
+          <ul class="post-copyright">
+            <li>
+              <i class="ri-copyright-line"></i>
+              <strong>版权声明： </strong>
+              本博客所有文章除特别声明外，著作权归作者所有。转载请注明出处！
+            </li>
+          </ul>
+        </div>
+        
+    <footer class="article-footer">
+      
+          
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://yoursite.com/2020/07/19/edgeComputing-1/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%BA%E6%96%87%E7%AC%94%E8%AE%B0/" rel="tag">论文笔记</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%BE%B9%E7%BC%98%E8%AE%A1%E7%AE%97/" rel="tag">边缘计算</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+  
+  <nav class="article-nav">
+    
+      <a href="/2020/07/30/docker/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            docker
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2020/06/21/idea1/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">idea1</div>
+      </a>
+    
+  </nav>
+
+
+  
+
+  
+  
+<!-- valine评论 -->
+<div id="vcomments-box">
+    <div id="vcomments">
+    </div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js'></script>
+<script>
+    new Valine({
+        el: '#vcomments',
+        app_id: 'dEVDDWhXqMT8KhXvNx1rDmmA-gzGzoHsz',
+        app_key: 'v0mSrHnmORU6F8eFbeOkbebr',
+        path: window.location.pathname,
+        notify: 'false',
+        verify: 'false',
+        avatar: 'monsterid',
+        placeholder: '给我的文章加点评论吧~',
+        recordIP: true
+    });
+    const infoEle = document.querySelector('#vcomments .info');
+    if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+        infoEle.childNodes.forEach(function (item) {
+            item.parentNode.removeChild(item);
+        });
+    }
+</script>
+<style>
+    #vcomments-box {
+        padding: 5px 30px;
+    }
+
+    @media screen and (max-width: 800px) {
+        #vcomments-box {
+            padding: 5px 0px;
+        }
+    }
+
+    #vcomments-box #vcomments {
+        background-color: #fff;
+    }
+
+    .v .vlist .vcard .vh {
+        padding-right: 20px;
+    }
+
+    .v .vlist .vcard {
+        padding-left: 10px;
+    }
+</style>
+
+  
+
+  
+  
+  
+  
+  
+
+</article>
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020
+        <i class="ri-heart-fill heart_icon"></i> JM Zhang
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        由 <a href="https://hexo.io" target="_blank">Hexo</a> 强力驱动
+        <span class="division">|</span>
+        主题 - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/icon.svg" alt="Kind &amp; Lucky"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">时间轴</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/photos">相册</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="搜索">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Subtitle -->
+
+<script>
+  try {
+    var typed = new Typed("#subtitle", {
+      strings: ['每个人都会犯错，犯了错就会受到惩罚', '最重的惩罚叫做“自己不放过自己”，', '越善良的人越是如此。'],
+      startDelay: 0,
+      typeSpeed: 200,
+      loop: true,
+      backSpeed: 50,
+      showCursor: true
+    });
+  } catch (err) {
+    console.log(err)
+  }
+</script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+<!-- ClickLove -->
+
+<!-- ClickBoom -->
+
+
+<script src="/js/clickBoom.js"></script>
+
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+
+    
+  </div>
+</body>
+
+</html>

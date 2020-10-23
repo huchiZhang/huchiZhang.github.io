@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-CN">
+
+
+<head>
+  <meta charset="utf-8" />
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    scala-1 |  Kind &amp; Lucky
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/icon.svg" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+  
+  
+
+  
+
+<link rel="alternate" href="/atom.xml" title="Kind & Lucky" type="application/atom+xml">
+</head>
+
+</html>
+
+<body>
+  
+  <canvas width="1777" height="841" style="position: fixed; left: 0px; top: 0px; z-index: 999; pointer-events: none;"></canvas>
+  
+  <div id="app">
+    <main class="content on">
+      <section class="outer">
+  <article id="post-scala-1" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  scala-1
+</h1>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/08/21/scala-1/" class="article-date">
+  <time datetime="2020-08-21T15:03:03.000Z" itemprop="datePublished">2020-08-21</time>
+</a>
+      
+      
+      
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> 字数统计:</span>
+            <span class="post-count">343</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> 阅读时长≈</span>
+            <span class="post-count">1 分钟</span>
+        </span>
+    </span>
+</div>
+
+      
+    </div>
+    
+
+    
+    
+    <div class="tocbot"></div>
+
+
+
+
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h2 id="scala-与-java-对比"><a href="#scala-与-java-对比" class="headerlink" title="scala 与 java 对比"></a>scala 与 java 对比</h2><h3 id="流程对比"><a href="#流程对比" class="headerlink" title="流程对比"></a>流程对比</h3><p><img src="/2020/08/21/scala-1/image-20200821230402518.png" alt="image-20200821230402518"></p>
+<h3 id="代码对比"><a href="#代码对比" class="headerlink" title="代码对比"></a>代码对比</h3><p>java：</p>
+<p><img src="/2020/08/21/scala-1/image-20200821231025475.png" alt="image-20200821231025475"></p>
+<p>scala：</p>
+<p><img src="/2020/08/21/scala-1/image-20200821231040206.png" alt="image-20200821231040206"></p>
+<h2 id="基础"><a href="#基础" class="headerlink" title="基础"></a>基础</h2><p><img src="/2020/08/21/scala-1/image-20200822000640684.png" alt="image-20200822000640684"></p>
+<ul>
+<li><p>定义字符串</p>
+<ul>
+<li>双引号<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822094044585.png" alt="image-20200822094044585"></li>
+</ul>
+</li>
+<li>插值表达式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822094023860.png" alt="image-20200822094023860"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822093954421.png" alt="image-20200822093954421"></li>
+</ul>
+</li>
+<li>三引号<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822094011015.png" alt="image-20200822094011015"></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>惰性赋值</p>
+<ul>
+<li>对变量的值进行延迟加载，不会在定义时候加载，只有在使用到的时候才会去加载</li>
+<li><img src="/2020/08/21/scala-1/image-20200822094144623.png" alt="image-20200822094144623"></li>
+</ul>
+</li>
+<li><p>数据类型</p>
+<ul>
+<li>scala和java一样都是强类型语言</li>
+<li><img src="/2020/08/21/scala-1/image-20200822094528674.png" alt="image-20200822094528674"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822094546671.png" alt="image-20200822094546671"></li>
+<li>数据类型的继承关系<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822094807879.png" alt="image-20200822094807879"></li>
+<li>val b:Int = null ：这句会报错因为null不能转化成Int类型</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>类型转换</p>
+<ul>
+<li><p>自动类型转换</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822105811319.png" alt="image-20200822105811319"></li>
+</ul>
+</li>
+<li><p>强制类型转换</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822105743368.png" alt="image-20200822105743368"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822095254553.png" alt="image-20200822095254553"></li>
+</ul>
+</li>
+<li><p>值类型和字符串类型之间的相互转换</p>
+<ul>
+<li><p><img src="/2020/08/21/scala-1/image-20200822105938378.png" alt="image-20200822105938378"></p>
+</li>
+<li><p><img src="/2020/08/21/scala-1/image-20200822110624752.png" alt="image-20200822110624752"></p>
+<p><img src="/2020/08/21/scala-1/image-20200822110715375.png" alt="image-20200822110715375"></p>
+</li>
+</ul>
+</li>
+<li><p>键盘录入</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822110919572.png" alt="image-20200822110919572"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822110912224.png" alt="image-20200822110912224"></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="运算符"><a href="#运算符" class="headerlink" title="运算符"></a>运算符</h3><ul>
+<li>运算符的分类<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822111845402.png" alt="image-20200822111845402"></li>
+</ul>
+</li>
+<li>算数运算符<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822111908686.png" alt="image-20200822111908686"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822111924551.png" alt="image-20200822111924551"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822112110095.png" alt="image-20200822112110095"></li>
+</ul>
+</li>
+<li>赋值运算符<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822112212841.png" alt="image-20200822112212841"></li>
+</ul>
+</li>
+<li>关系运算符<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822112314583.png" alt="image-20200822112314583"></li>
+</ul>
+</li>
+<li>逻辑运算符<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822112410275.png" alt="image-20200822112410275"></li>
+</ul>
+</li>
+<li>位运算<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822112626803.png" alt="image-20200822112626803"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822112730143.png" alt="image-20200822112730143"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822112741410.png" alt="image-20200822112741410"></li>
+</ul>
+</li>
+</ul>
+<h3 id="代码结构"><a href="#代码结构" class="headerlink" title="代码结构"></a>代码结构</h3><ul>
+<li>顺序结构<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113017385.png" alt="image-20200822113017385"></li>
+</ul>
+</li>
+<li>选择结构<ul>
+<li>单分支<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113119096.png" alt="image-20200822113119096"></li>
+</ul>
+</li>
+<li>双分支<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113143954.png" alt="image-20200822113143954"></li>
+</ul>
+</li>
+<li>多分支<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113202857.png" alt="image-20200822113202857"></li>
+</ul>
+</li>
+<li>注意<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113254725.png" alt="image-20200822113254725"></li>
+<li>注意:scala判断可以有返回值</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>块表达式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113707626.png" alt="image-20200822113707626"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822114112272.png" alt="image-20200822114112272"></li>
+</ul>
+</li>
+<li>循环<ul>
+<li>for<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822133053032.png" alt="image-20200822133053032"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822133338973.png" alt="image-20200822133338973"></li>
+</ul>
+</li>
+<li>守卫<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822134237975.png" alt="image-20200822134237975"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822134221886.png" alt="image-20200822134221886"></li>
+</ul>
+</li>
+<li>推导式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822134700288.png" alt="image-20200822134700288"></li>
+</ul>
+</li>
+<li>while<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822134821705.png" alt="image-20200822134821705"></li>
+</ul>
+</li>
+<li>do… while…<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822134910070.png" alt="image-20200822134910070"></li>
+</ul>
+</li>
+<li>break 和continue<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822135151480.png" alt="image-20200822135151480"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822135100487.png" alt="image-20200822135100487"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822135257856.png" alt="image-20200822135257856"></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="方法和函数"><a href="#方法和函数" class="headerlink" title="方法和函数"></a>方法和函数</h3><ul>
+<li><p>方法</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822143408397.png" alt="image-20200822143408397"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822144207202.png" alt="image-20200822144207202"></li>
+<li>注意：递归方法的返回值类型不可以省略</li>
+</ul>
+</li>
+<li><p>惰性方法</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822150112130.png" alt="image-20200822150112130"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822150335230.png" alt="image-20200822150335230"></li>
+</ul>
+</li>
+<li><p>方法参数</p>
+<ul>
+<li>默认参数</li>
+<li>带名参数<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822195313993.png" alt="image-20200822195313993"></li>
+</ul>
+</li>
+<li>边长参数<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822195118907.png" alt="image-20200822195118907"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822195231130.png" alt="image-20200822195231130"></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>方法调用方式</p>
+<ul>
+<li>后缀调用方式</li>
+<li>中缀调用方式</li>
+<li>花括号调用方式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822203633112.png" alt="image-20200822203633112"></li>
+</ul>
+</li>
+<li>无括号调用方式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822203704230.png" alt="image-20200822203704230"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822203712754.png" alt="image-20200822203712754"></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>函数</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822204326887.png" alt="image-20200822204326887"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822230850838.png" alt="image-20200822230850838"></li>
+</ul>
+</li>
+<li><p>方法和函数的区别</p>
+<ul>
+<li><p><img src="/2020/08/21/scala-1/image-20200822233359725.png" alt="image-20200822233359725"></p>
+</li>
+<li><p>方法无法直接赋值给变量</p>
+<p><img src="/2020/08/21/scala-1/image-20200822233851643.png" alt="image-20200822233851643"></p>
+</li>
+<li><p>所以需要将方法转换为函数</p>
+<p><img src="/2020/08/21/scala-1/image-20200822233941507.png" alt="image-20200822233941507"></p>
+</li>
+</ul>
+</li>
+</ul>
+
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+        <div class="declare">
+          <ul class="post-copyright">
+            <li>
+              <i class="ri-copyright-line"></i>
+              <strong>版权声明： </strong>
+              本博客所有文章除特别声明外，著作权归作者所有。转载请注明出处！
+            </li>
+          </ul>
+        </div>
+        
+    <footer class="article-footer">
+      
+          
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://yoursite.com/2020/08/21/scala-1/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>
+      
+      
+
+    </footer>
+
+  </div>
+
+  
+  
+  <nav class="article-nav">
+    
+      <a href="/2020/08/28/cloudsim-1/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            cloudsim-1
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2020/08/21/mapreduce2/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">mapreduce2</div>
+      </a>
+    
+  </nav>
+
+
+  
+
+  
+  
+<!-- valine评论 -->
+<div id="vcomments-box">
+    <div id="vcomments">
+    </div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js'></script>
+<script>
+    new Valine({
+        el: '#vcomments',
+        app_id: 'dEVDDWhXqMT8KhXvNx1rDmmA-gzGzoHsz',
+        app_key: 'v0mSrHnmORU6F8eFbeOkbebr',
+        path: window.location.pathname,
+        notify: 'false',
+        verify: 'false',
+        avatar: 'monsterid',
+        placeholder: '给我的文章加点评论吧~',
+        recordIP: true
+    });
+    const infoEle = document.querySelector('#vcomments .info');
+    if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+        infoEle.childNodes.forEach(function (item) {
+            item.parentNode.removeChild(item);
+        });
+    }
+</script>
+<style>
+    #vcomments-box {
+        padding: 5px 30px;
+    }
+
+    @media screen and (max-width: 800px) {
+        #vcomments-box {
+            padding: 5px 0px;
+        }
+    }
+
+    #vcomments-box #vcomments {
+        background-color: #fff;
+    }
+
+    .v .vlist .vcard .vh {
+        padding-right: 20px;
+    }
+
+    .v .vlist .vcard {
+        padding-left: 10px;
+    }
+</style>
+
+  
+
+  
+  
+  
+  
+  
+
+</article>
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020
+        <i class="ri-heart-fill heart_icon"></i> JM Zhang
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        由 <a href="https://hexo.io" target="_blank">Hexo</a> 强力驱动
+        <span class="division">|</span>
+        主题 - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/icon.svg" alt="Kind &amp; Lucky"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">时间轴</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/photos">相册</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="搜索">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Subtitle -->
+
+<script>
+  try {
+    var typed = new Typed("#subtitle", {
+      strings: ['每个人都会犯错，犯了错就会受到惩罚', '最重的惩罚叫做“自己不放过自己”，', '越善良的人越是如此。'],
+      startDelay: 0,
+      typeSpeed: 200,
+      loop: true,
+      backSpeed: 50,
+      showCursor: true
+    });
+  } catch (err) {
+    console.log(err)
+  }
+</script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+<!-- ClickLove -->
+
+<!-- ClickBoom -->
+
+
+<script src="/js/clickBoom.js"></script>
+
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+
+    
+  </div>
+</body>
+
+</html>

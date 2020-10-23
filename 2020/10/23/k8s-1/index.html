@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-CN">
+
+
+<head>
+  <meta charset="utf-8" />
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    k8s-1 |  Kind &amp; Lucky
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/icon.svg" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+  
+  
+
+  
+
+<link rel="alternate" href="/atom.xml" title="Kind & Lucky" type="application/atom+xml">
+</head>
+
+</html>
+
+<body>
+  
+  <canvas width="1777" height="841" style="position: fixed; left: 0px; top: 0px; z-index: 999; pointer-events: none;"></canvas>
+  
+  <div id="app">
+    <main class="content on">
+      <section class="outer">
+  <article id="post-k8s-1" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  k8s-1
+</h1>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/10/23/k8s-1/" class="article-date">
+  <time datetime="2020-10-23T14:42:39.000Z" itemprop="datePublished">2020-10-23</time>
+</a>
+      
+      
+      
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> 字数统计:</span>
+            <span class="post-count">3.8k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> 阅读时长≈</span>
+            <span class="post-count">18 分钟</span>
+        </span>
+    </span>
+</div>
+
+      
+    </div>
+    
+
+    
+    
+
+
+
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <p>概念<br>    什么是k8s<br>        k8s是一组服务器集群<br>        k8s所管理的集群节点上的容器</p>
+<pre><code>k8s的功能
+    自我修复
+    弹性伸缩：实时根据服务器的并发情况，增加或缩减容器数量
+    自动部署:
+    回滚：
+    服务发现和负载均衡
+    机密和配置共享管理
+
+k8s集群分为两类节点
+    master node：主
+    worker node：工作
+
+master节点的组件(程序)
+    apiserver：接受客户端操作可k8s的指令
+    schduler：从多个worker node节点的组件中选举一个来启动服务
+    controller manager：向worker节点的kubelet发送指令的
+
+node节点的组件(程序)
+    kubelet：向docker发送指令管理docker容器的
+    kubeproxy：管理docker容器的网络
+
+etcd
+    k8s的数据库
+    用来注册节点、服务、记录账户....
+
+核心概念
+pod
+    pod是k8s最小部署单元
+    一个pod中可以有一个或者多个容器一组容器
+    pod又称为容器组
+
+Controllers：控制器，控制pod，启动、停止、删除
+    ReplicaSet
+    Deployment
+    StatefulSet
+    DaemonSet
+    Job 
+    Cronjob
+
+service：服务
+    将一组pod关联起立，提供一个统一的入口
+    即使pod地址发生改变，这个统一入口也不会变化，可以保证用户访问不受影响
+
+label：标签
+    一组pod是一个统一的标签
+    service是通过标签和一组pod进行关联的
+
+namespace：名称空间
+    用来隔离pod的运行环境【默认情况下，pod是可以互相访问】
+    使用场景
+        为不同的公司提供隔离的pod运行环境
+        为开发环境、测试环境、生产环境分别准备不同的名称空间，进行隔离</code></pre><p>k8s中是否能直接启动容器？<br>    架构类别<br>        单master<br>        多master - 生产环境</p>
+<pre><code>生产环境k8s规划
+    master建议3台
+    etcd必须三台（3,5,7）
+    worder越多越好</code></pre><p>实验环境规划<br>    三个节点<br>        2G内存<br>        2核CPU</p>
+<p>部署单master集群<br>一、集群规划<br>    master<br>        主机名：k8s-master1<br>        IP：192.168.31.63<br>    worker1<br>        主机名：k8s-node1<br>        IP：192.168.31.65<br>    worker1<br>        主机名：k8s-node2<br>        IP：192.168.31.66</p>
+<pre><code>k8s版本：1.16
+安装方式：离线-二进制
+操作系统版本：7.7</code></pre><p>二、初始化服务器<br>    1 关闭防火墙<br>        【所有主节点都执行】<br>        [root@k8s-master1 ~]# systemctl stop firewalld<br>        [root@k8s-master1 ~]# systemctl disable firewalld</p>
+<pre><code>2 关闭selinux
+    【所有主节点都执行】
+    # setenforce 0
+    # vim /etc/selinux/config
+        修改SELINUX=enforcing 为 SELINUX=disabled
+
+3 配置主机名
+    【所有主节点都执行】
+    hostnamectl set-hostname 主机名
+
+4 配置名称解析
+    【所有主节点都执行】
+    # vi /etc/hosts
+    添加如下四行
+    192.168.31.63    k8s-master1
+    192.168.31.64    k8s-master2
+    192.168.31.65    k8s-node1
+    192.168.31.66    k8s-node2
+
+5 配置时间同步
+    选择一个节点作为服务端，剩下的作为客户端
+        master1为时间服务器的服务端
+        其他的为时间服务器的客户端
+
+    1）配置k8s-master1    
+        # yum install chrony -y
+        # vim /etc/chrony.config
+        修改三项
+            server 127.127.1.0 iburst
+            allow 192.168.31.0/24
+            local stratum 10
+        # systemctl start chronyd
+        # systemctl enable chronyd
+        # ss -unl | grep 123
+        UNCONN     0      0            *:123                      *:*   
+
+    2）配置k8s-node1 和k8s-node2
+        # yum install chrony -y
+        # vim /etc/chrony.conf
+            server 192.168.31.63 iburst
+        # systemctl start chronyd
+        # systemctl enable chronyd
+        # chronyc sources
+            210 Number of sources = 1
+            MS Name/IP address         Stratum Poll Reach LastRx Last sample               
+            ===============================================================================
+            ^* k8s-master1                  10   6    17     4    +11us[  +79us] +/-   95us
+6 关闭交换分区
+    【所有主节点都执行】
+    [root@k8s-master1 ~]# swapoff -a
+    [root@k8s-master1 ~]# vim /etc/fstab
+    删除一行:
+
+    检查是否关闭成功
+    [root@k8s-master1 ~]# free -m
+                  total        used        free      shared  buff/cache   available
+    Mem:           2827         157        2288           9         380        2514
+    Swap:             0           0           0</code></pre><p>三、给etcd颁发证书<br>    流程说简介<br>        1）创建证书颁发机构<br>        2）填写表单–写明etcd所在节点的IP<br>        3）向证书颁发机构申请证书</p>
+<pre><code>第一步：上传TLS安装包
+    传到/root下
+    略
+第二步：
+    # tar xvf /root/TLS.tar.gz
+    # cd /root/TLS
+    # vim server-csr.json 
+        修改host中的IP地址，这里的IP是etcd所在节点的IP地址
+        {
+            &quot;CN&quot;: &quot;etcd&quot;,
+            &quot;hosts&quot;: [
+                &quot;192.168.31.63&quot;,
+                &quot;192.168.31.65&quot;,
+                &quot;192.168.31.66&quot;
+                ],
+            &quot;key&quot;: {
+                &quot;algo&quot;: &quot;rsa&quot;,
+                &quot;size&quot;: 2048
+            },
+            &quot;names&quot;: [
+                {
+                    &quot;C&quot;: &quot;CN&quot;,
+                    &quot;L&quot;: &quot;BeiJing&quot;,
+                    &quot;ST&quot;: &quot;BeiJing&quot;
+                }
+            ]
+        }
+    # ./generate_etcd_cert.sh
+    # ls *pem
+        ca-key.pem  ca.pem  server-key.pem  server.pem</code></pre><p>四、部署etcd</p>
+<p>问题：<br>centos7<br>systemd服务管理脚本在那个目录？</p>
+<pre><code>etcd需要三台虚拟机
+在master、node1、node2上分别安装一个etcd
+
+注意：
+    解压之后会生成一个文件和一个目录
+
+    # tar xvf etcd.tar.gz 
+    # mv etcd.service /usr/lib/systemd/system
+    # vim /opt/etcd/cfg/etcd.conf
+        #[Member]
+        ETCD_NAME=&quot;etcd-1&quot;
+        ETCD_DATA_DIR=&quot;/var/lib/etcd/default.etcd&quot;
+        ETCD_LISTEN_PEER_URLS=&quot;https://192.168.31.63:2380&quot;
+        ETCD_LISTEN_CLIENT_URLS=&quot;https://192.168.31.63:2379&quot;
+
+        #[Clustering]
+        ETCD_INITIAL_ADVERTISE_PEER_URLS=&quot;https://192.168.31.63:2380&quot;
+        ETCD_ADVERTISE_CLIENT_URLS=&quot;https://192.168.31.63:2379&quot;
+        ETCD_INITIAL_CLUSTER=&quot;etcd-1=https://192.168.31.63:2380,etcd-2=https://192.168.31.65:2380,etcd-3=https://192.168.31.66:2380&quot;
+        ETCD_INITIAL_CLUSTER_TOKEN=&quot;etcd-cluster&quot;
+        ETCD_INITIAL_CLUSTER_STATE=&quot;new&quot;
+    # rm -rf /opt/etcd/ssl/*
+    # \cp -fv ca.pem server.pem server-key.pem /opt/etcd/ssl/ </code></pre><p>别名：<br>使用命令alias查看所有别名<br>别名就是用一个命令代替一组命令<br>如果想要不使用别名就在命令前添加\</p>
+<pre><code>将etc管理程序和程序目录发送到node1 和node2
+# scp /usr/lib/systemd/system/etcd.service root@k8s-node1:/usr/lib/systemd/system/
+# scp /usr/lib/systemd/system/etcd.service root@k8s-node2:/usr/lib/systemd/system/
+# scp -r /opt/etcd/ root@k8s-node2:/opt/
+# scp -r /opt/etcd/ root@k8s-node1:/opt/
+
+在node1上修改etcd的配置文件
+# vim /opt/etcd/cfg/etcd.conf
+#[Member]
+ETCD_NAME=&quot;etcd-2&quot;
+ETCD_DATA_DIR=&quot;/var/lib/etcd/default.etcd&quot;
+ETCD_LISTEN_PEER_URLS=&quot;https://192.168.31.65:2380&quot;
+ETCD_LISTEN_CLIENT_URLS=&quot;https://192.168.31.65:2379&quot;
+
+#[Clustering]
+ETCD_INITIAL_ADVERTISE_PEER_URLS=&quot;https://192.168.31.65:2380&quot;
+ETCD_ADVERTISE_CLIENT_URLS=&quot;https://192.168.31.65:2379&quot;
+ETCD_INITIAL_CLUSTER=&quot;etcd-1=https://192.168.31.63:2380,etcd-2=https://192.168.31.65:2380,etcd-3=https://192.168.31.66:2380&quot;
+ETCD_INITIAL_CLUSTER_TOKEN=&quot;etcd-cluster&quot;
+ETCD_INITIAL_CLUSTER_STATE=&quot;new&quot;
+
+在node2上修改etcd的配置文件
+# vim /opt/etcd/cfg/etcd.conf
+#[Member]
+ETCD_NAME=&quot;etcd-3&quot;
+ETCD_DATA_DIR=&quot;/var/lib/etcd/default.etcd&quot;
+ETCD_LISTEN_PEER_URLS=&quot;https://192.168.31.66:2380&quot;
+ETCD_LISTEN_CLIENT_URLS=&quot;https://192.168.31.66:2379&quot;
+
+#[Clustering]
+ETCD_INITIAL_ADVERTISE_PEER_URLS=&quot;https://192.168.31.66:2380&quot;
+ETCD_ADVERTISE_CLIENT_URLS=&quot;https://192.168.31.66:2379&quot;
+ETCD_INITIAL_CLUSTER=&quot;etcd-1=https://192.168.31.63:2380,etcd-2=https://192.168.31.65:2380,etcd-3=https://192.168.31.66:2380&quot;
+ETCD_INITIAL_CLUSTER_TOKEN=&quot;etcd-cluster&quot;
+ETCD_INITIAL_CLUSTER_STATE=&quot;new&quot;
+
+
+在三个节点一次启动etcd服务
+# systemctl start etcd
+   # systemctl enable etcd
+
+检查是否启动成功
+# /opt/etcd/bin/etcdctl --ca-file=/opt/etcd/ssl/ca.pem --cert-file=/opt/etcd/ssl/server.pem --key-file=/opt/etcd/ssl/server-key.pem --endpoints=&quot;https://192.168.31.63:2379,https://192.168.31.65:2379,https://192.168.31.66:2379&quot; cluster-health</code></pre><p>五、为api server签发证书<br>    # cd /root/TLS/k8s/<br>    # ./generate_k8s_cert.sh </p>
+<p>六、部署master服务<br>    # tar xvf k8s-master.tar.gz<br>    # mv kube-apiserver.service kube-controller-manager.service kube-scheduler.service /usr/lib/systemd/system/<br>    # mv kubernetes /opt/<br>    # cp /root/TLS/k8s/{ca*pem,server.pem,server-key.pem} /opt/kubernetes/ssl/ -rvf</p>
+<pre><code>修改apiserver的配置文件
+# vim /opt/kubernetes/cfg/kube-apiserver.conf 
+    KUBE_APISERVER_OPTS=&quot;--logtostderr=false \
+    --v=2 \
+    --log-dir=/opt/kubernetes/logs \
+    --etcd-servers=https://192.168.31.63:2379,https://192.168.31.65:2379,https://192.168.31.66:2379 \
+    --bind-address=192.168.31.63 \
+    --secure-port=6443 \
+    --advertise-address=192.168.31.63 \
+    --allow-privileged=true \
+    --service-cluster-ip-range=10.0.0.0/24 \
+    --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,ResourceQuota,NodeRestriction \
+    --authorization-mode=RBAC,Node \
+    --enable-bootstrap-token-auth=true \
+    --token-auth-file=/opt/kubernetes/cfg/token.csv \
+    --service-node-port-range=30000-32767 \
+    --kubelet-client-certificate=/opt/kubernetes/ssl/server.pem \
+    --kubelet-client-key=/opt/kubernetes/ssl/server-key.pem \
+    --tls-cert-file=/opt/kubernetes/ssl/server.pem  \
+    --tls-private-key-file=/opt/kubernetes/ssl/server-key.pem \
+    --client-ca-file=/opt/kubernetes/ssl/ca.pem \
+    --service-account-key-file=/opt/kubernetes/ssl/ca-key.pem \
+    --etcd-cafile=/opt/etcd/ssl/ca.pem \
+    --etcd-certfile=/opt/etcd/ssl/server.pem \
+    --etcd-keyfile=/opt/etcd/ssl/server-key.pem \
+    --audit-log-maxage=30 \
+    --audit-log-maxbackup=3 \
+    --audit-log-maxsize=100 \
+    --audit-log-path=/opt/kubernetes/logs/k8s-audit.log&quot;
+
+启动master
+    # systemctl start kube-apiserver
+    # systemctl enable kube-apiserver
+    # systemctl enable kube-scheduler
+    # systemctl start kube-scheduler
+    # systemctl start kube-controller-manager
+    # systemctl start kube-scheduler
+    # systemctl enable kube-controller-manager
+    # cp /opt/kubernetes/bin/kubectl /bin/
+
+
+检查启动结果
+    # ps aux |grep kube
+    # ps aux |grep kube | wc -4
+
+    # kubectl get cs
+    NAME                 AGE
+    controller-manager   &lt;unknown&gt;
+    scheduler            &lt;unknown&gt;
+    etcd-1               &lt;unknown&gt;
+    etcd-2               &lt;unknown&gt;
+    etcd-0               &lt;unknown&gt;
+
+配置tls 基于bootstrap自动颁发证书
+    # kubectl create clusterrolebinding kubelet-bootstrap \
+    --clusterrole=system:node-bootstrapper \
+    --user=kubelet-bootstrap</code></pre><p>七、安装worker node节点<br>    docker：启动容器<br>    kubelet：接受apiserver的指令，然后控制docker容器<br>    kube-proxy：为worker上的容器配置网络工作</p>
+<pre><code>第一步：安装配置docker
+    [root@k8s-node1 ~]# tar xvf k8s-node.tar.gz 
+    [root@k8s-node1 ~]# mv docker.service /usr/lib/systemd/system
+    [root@k8s-node1 ~]# mkdir /etc/docker
+    [root@k8s-node1 ~]# cp daemon.json /etc/docker
+    [root@k8s-node1 ~]# tar xf docker-18.09.6.tgz 
+    [root@k8s-node1 ~]# mv docker/* /bin/
+    [root@k8s-node1 ~]# systemctl start docker
+    [root@k8s-node1 ~]# systemctl enable docker
+    [root@k8s-node1 ~]# docker info
+
+第二步：安装kubelet和kube-proxy
+    1）生成程序目录和管理脚本
+        [root@k8s-node1 ~]# tar xvf k8s-node.tar.gz     
+        [root@k8s-node1 ~]# mv kubelet.service kube-proxy.service /usr/lib/systemd/system/
+        [root@k8s-node1 ~]# mv kubernetes /opt/
+
+    2）修改配置文件（4个）
+        [root@k8s-node1 ~]# vim /opt/kubernetes/cfg/kube-proxy.kubeconfig
+        修改一行：server: https://192.168.31.63:6443
+        这里指定的是master的ip地址
+
+        [root@k8s-node1 ~]# vi /opt/kubernetes/cfg/bootstrap.kubeconfig
+        修改一行：server: https://192.168.31.63:6443
+        这里指定的是master的ip地址
+
+        [root@k8s-node1 ~]# vim /opt/kubernetes/cfg/kube-proxy-config.yml
+        修改一行：hostnameOverride: k8s-node1
+        这里是指定当前主机的主机名
+
+        [root@k8s-node1 ~]# vim /opt/kubernetes/cfg/kubelet.conf 
+        修改一行：--hostname-override=k8s-node1 \
+        这里是指定当前主机的主机名
+
+    3）从master节点复制证书到worker节点
+        [root@k8s-master1 ~]# cd /root/TLS/k8s/
+        [root@k8s-master1 k8s]# scp ca.pem kube-proxy.pem kube-proxy-key.pem root@k8s-node1:/opt/kubernetes/ssl/
+
+    4）启动kubelet和kube-proxy服务
+        [root@k8s-node1 ~]# systemctl start kube-proxy
+        [root@k8s-node1 ~]# systemctl start kubelet
+        [root@k8s-node1 ~]# systemctl enable kubelet
+        [root@k8s-node1 ~]# systemctl enable kube-proxy
+
+        [root@k8s-node1 ~]# tail -f /opt/kubernetes/logs/kubelet.INFO 
+        如果看到最后一行信息是如下内容，就表示启动服务政策：
+        No valid private key and/or certificate found, reusing existing private key or creating a new one
+
+    5）在master节点为worker节点颁发证书
+        [root@k8s-master1 k8s]# kubectl get csr
+        NAME                                                   AGE    REQUESTOR           CONDITION
+        node-csr-Uu61q1J1nAJ0AprrHc9rcSPVU0qSsD-Z4qDdapDvsWo   6m6s   kubelet-bootstrap   Pending
+
+        [root@k8s-master1 k8s]# kubectl certificate approve node-csr-Uu61q1J1nAJ0AprrHc9rcSPVU0qSsD-Z4qDdapDvsWo
+        注意：名称必须用自己的名称，不要抄我的
+
+    6）给worker节点颁发证书之后，就可以在master上看到worker节点了
+        [root@k8s-master1 k8s]# kubectl get node
+        NAME        STATUS     ROLES    AGE     VERSION
+        k8s-node1   NotReady   &lt;none&gt;   5h13m   v1.16.0
+        k8s-node2   NotReady   &lt;none&gt;   3s      v1.16.0
+
+第三步：安装网络插件
+    1）确认启用CNI
+        [root@k8s-node1 ~]# grep &quot;cni&quot; /opt/kubernetes/cfg/kubelet.conf
+        --network-plugin=cni \
+
+    2）安装CNI
+        [root@k8s-node1 ~]# mkdir -pv /opt/cni/bin /etc/cni/net.d
+        [root@k8s-node1 ~]# tar xf k8s-node.tar.gz
+        [root@k8s-node1 ~]# tar xf cni-plugins-linux-amd64-v0.8.2.tgz -C /opt/cni/bin
+
+    3）在master上执行yaml脚本，实现在worker节点安装启动网络插件功能
+        [root@k8s-master1 YAML]# kubectl apply -f kube-flannel.yaml
+        注意：
+            这个操作受限于网络，可能会需要5~10分钟才能执行成功
+            如果网上太慢，会导致超时
+
+        [root@k8s-master1 YAML]# kubectl get pods -n kube-system
+        NAME                          READY   STATUS              RESTARTS   AGE
+        kube-flannel-ds-amd64-6h5dg   1/1     Running             0          2m29s
+        kube-flannel-ds-amd64-cgbqj   1/1     Running             0          2m29s
+
+        查看worker节点的状态
+        [root@k8s-master1 YAML]# kubectl get nodes
+        NAME        STATUS     ROLES    AGE     VERSION
+        k8s-node1   Ready      &lt;none&gt;   5h33m   v1.16.0
+        k8s-node2   Ready      &lt;none&gt;   19m     v1.16.0
+
+第四步：授权apiserver可以访问kubelet
+    [root@k8s-master1 YAML]# kubectl apply -f apiserver-to-kubelet-rbac.yaml </code></pre><p>​<br>八、启动nginx容器</p>
+<pre><code>1）修改node1和node2的docker配置文件
+    [root@k8s-node1 ~]# vim /etc/docker/daemon.json 
+    {
+        &quot;registry-mirrors&quot;: [
+               &quot;https://mzxx8xy8.mirror.aliyuncs.com&quot;,
+               &quot;http://bc437cce.m.daocloud.io&quot;
+               ],
+        &quot;insecure-registries&quot;: [&quot;192.168.31.70&quot;]
+    }
+
+2）重启服务
+    [root@k8s-node1 ~]# systemctl daemon-reload
+    [root@k8s-node1 ~]# systemctl restart docker
+
+3）在master上启动nginx
+    创建deployment，通过deployment来创建和管理nginx容器
+    [root@k8s-master1 tmp]# kubectl create deployment myweb --image=nginx:1.8
+    deployment.apps/myweb created
+
+    查看一下deployment的状态
+    [root@k8s-master1 tmp]# kubectl get deployment
+    NAME    READY   UP-TO-DATE   AVAILABLE   AGE
+    myweb   0/1     1            0           24s
+
+    查看pode的状态
+    [root@k8s-master1 tmp]# kubectl get pods
+    NAME                     READY   STATUS    RESTARTS   AGE
+    myweb-5b79bf86d4-8kv4d   1/1     Running   0          119s
+
+4）暴露myweb的端口到物理机
+    [root@k8s-master1 tmp]# kubectl expose deployment myweb --port=80 --type=NodePort
+
+    查看当前将80映射到了哪个端口
+    [root@k8s-master1 tmp]# kubectl get svc
+    NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE
+    myweb        NodePort    10.0.0.18    &lt;none&gt;        80:30828/TCP   23s
+
+5）访问集群任意节点的30828来访问nginx
+    [root@k8s-master1 tmp]# yum install curl -y
+    [root@k8s-master1 tmp]# curl http://192.168.31.65:30828</code></pre><p>九、配置web界面<br>    两种<br>        官方：kubernetes dashboard<br>        第三方：kuboard</p>
+<pre><code>安装：dashboard
+    [root@k8s-master1 tmp]# kubectl apply -f /root/k8sFiles/YAML/dashboard.yaml 
+
+    [root@k8s-master1 tmp]# kubectl get pods -n kubernetes-dashboard
+    NAME                                         READY   STATUS    RESTARTS   AGE
+    dashboard-metrics-scraper-566cddb686-mt2p6   1/1     Running   0          51s
+    kubernetes-dashboard-7b5bf5d559-hwfn9        1/1     Running   0          51s
+
+    [root@k8s-master1 tmp]# kubectl get svc -n kubernetes-dashboard
+    NAME                        TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)         AGE
+    dashboard-metrics-scraper   ClusterIP   10.0.0.4     &lt;none&gt;        8000/TCP        2m9s
+    kubernetes-dashboard        NodePort    10.0.0.197   &lt;none&gt;        443:30001/TCP   2m9s
+
+
+安装：kuboard
+
+
+[root@k8s-master1 tmp]# vim start_kuboard.yaml 
+修改一行，指定希望kuboard运行在哪个节点：- name: kuboard
+
+
+
+[root@k8s-master1 tmp]# kubectl apply -f start_kuboard.yaml 
+[root@k8s-master1 tmp]# kubectl get pods -n kube-system
+NAME                          READY   STATUS    RESTARTS   AGE
+kuboard-c665d7966-w7q9m       1/1     Running   0          27s
+
+
+查看一下kuboard的暴露的端口
+[root@k8s-master1 tmp]# kubectl get svc -n kube-system
+NAME       TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)         AGE
+kube-dns   ClusterIP   10.0.0.2     &lt;none&gt;        53/UDP,53/TCP   5h5m
+kuboard    NodePort    10.0.0.69    &lt;none&gt;        80:32567/TCP    2m22s</code></pre><p>centos7<br>    systemd 服务管理脚本在哪个目录？<br>    /usr/lib/systemd/system</p>
+<p>centos6<br>    sysV风格服务管理脚本在哪？<br>    /etc/rc.d/rcN.d<br>        N 0 1 2 3 4 5 6</p>
+<p>#################################################<br>加密<br>    对称加密：加密解密用相同的密钥<br>    非对称加密：用公钥~私钥的密钥对实现加解密<br>    单向加密：只能加密，不能解密，MD5</p>
+<p>ssl证书来源<br>    网络第三方机构购买，通常这种证书是用于让外部用户访问使用<br>    自己给自己发证书-自签证书，通常用于内部环境</p>
+<pre><code>签证机构（CA）</code></pre><p>自建CA<br>    openssl<br>    cfssl</p>
+<p>##############################################################################<br>2月10日 作业:<br>    内容：<br>        三台虚拟机：2C 2G<br>        三个虚拟机完成初始化</p>
+<pre><code>提交内容：
+    提交6项系统初始化结果截图
+
+提交时间：
+    2月11日中午11点前</code></pre><p>###############################################################################</p>
+<p>2月11日 作业:<br>    内容：<br>        在前一天的基础上，完成master节点的部署</p>
+<pre><code>提交内容：
+    最终部署结果，要求能看到kube相关的三个进程，也可以执行kubectl get cs，返回结果是
+    # kubectl get cs
+    NAME                 AGE
+    controller-manager   &lt;unknown&gt;
+    scheduler            &lt;unknown&gt;
+    etcd-1               &lt;unknown&gt;
+    etcd-2               &lt;unknown&gt;
+    etcd-0               &lt;unknown&gt;
+
+提交时间：
+    2月12日中午11点前
+
+
+ps aux | grep kube
+看不到api server，说明服务没有启动，故障排除的思路
+1）分析日志文件(/opt/kubernetes/log/kube-apiserver.INFO)
+2）systemctl status kube-apiserver
+
+导致apiserver异常的可能
+1）api server的配置文件写错了
+    往往是ip地址写错了
+
+2）api server无法访问etcd服务
+    etcd的证书文件缺少、损坏（/opt/etc/ssl--&gt;cat.pem server.pem server-key.pem）
+    etcd服务异常</code></pre><p>######################################################################</p>
+<p>2月12日作业<br>    作业内容：<br>        部署两个node节点{配置相同}<br>        安装docker<br>        安装kubelet kube-proxy</p>
+<pre><code>最终结果
+    [root@k8s-master1 k8s]# kubectl get node
+        NAME        STATUS     ROLES    AGE     VERSION
+        k8s-node1   NotReady   &lt;none&gt;   5h13m   v1.16.0
+        k8s-node2   NotReady   &lt;none&gt;   3s      v1.16.0</code></pre><p>#########################################################################<br>2月13日作业<br>    部署两个node节点<br>    在12号作业基础上安装网络插件，节点状态变为ready<br>    部署一个k8s web管理界面</p>
+
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+        <div class="declare">
+          <ul class="post-copyright">
+            <li>
+              <i class="ri-copyright-line"></i>
+              <strong>版权声明： </strong>
+              本博客所有文章除特别声明外，著作权归作者所有。转载请注明出处！
+            </li>
+          </ul>
+        </div>
+        
+    <footer class="article-footer">
+      
+          
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://yoursite.com/2020/10/23/k8s-1/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>
+      
+      
+
+    </footer>
+
+  </div>
+
+  
+  
+  <nav class="article-nav">
+    
+    
+      <a href="/2020/08/28/cloudsim-1/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">cloudsim-1</div>
+      </a>
+    
+  </nav>
+
+
+  
+
+  
+  
+<!-- valine评论 -->
+<div id="vcomments-box">
+    <div id="vcomments">
+    </div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js'></script>
+<script>
+    new Valine({
+        el: '#vcomments',
+        app_id: 'dEVDDWhXqMT8KhXvNx1rDmmA-gzGzoHsz',
+        app_key: 'v0mSrHnmORU6F8eFbeOkbebr',
+        path: window.location.pathname,
+        notify: 'false',
+        verify: 'false',
+        avatar: 'monsterid',
+        placeholder: '给我的文章加点评论吧~',
+        recordIP: true
+    });
+    const infoEle = document.querySelector('#vcomments .info');
+    if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+        infoEle.childNodes.forEach(function (item) {
+            item.parentNode.removeChild(item);
+        });
+    }
+</script>
+<style>
+    #vcomments-box {
+        padding: 5px 30px;
+    }
+
+    @media screen and (max-width: 800px) {
+        #vcomments-box {
+            padding: 5px 0px;
+        }
+    }
+
+    #vcomments-box #vcomments {
+        background-color: #fff;
+    }
+
+    .v .vlist .vcard .vh {
+        padding-right: 20px;
+    }
+
+    .v .vlist .vcard {
+        padding-left: 10px;
+    }
+</style>
+
+  
+
+  
+  
+  
+  
+  
+
+</article>
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020
+        <i class="ri-heart-fill heart_icon"></i> JM Zhang
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        由 <a href="https://hexo.io" target="_blank">Hexo</a> 强力驱动
+        <span class="division">|</span>
+        主题 - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/icon.svg" alt="Kind &amp; Lucky"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">时间轴</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/photos">相册</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="搜索">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Subtitle -->
+
+<script>
+  try {
+    var typed = new Typed("#subtitle", {
+      strings: ['每个人都会犯错，犯了错就会受到惩罚', '最重的惩罚叫做“自己不放过自己”，', '越善良的人越是如此。'],
+      startDelay: 0,
+      typeSpeed: 200,
+      loop: true,
+      backSpeed: 50,
+      showCursor: true
+    });
+  } catch (err) {
+    console.log(err)
+  }
+</script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+<!-- ClickLove -->
+
+<!-- ClickBoom -->
+
+
+<script src="/js/clickBoom.js"></script>
+
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+
+    
+  </div>
+</body>
+
+</html>

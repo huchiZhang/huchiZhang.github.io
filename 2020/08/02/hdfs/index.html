@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-CN">
+
+
+<head>
+  <meta charset="utf-8" />
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    hdfs |  Kind &amp; Lucky
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/icon.svg" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+  
+  
+
+  
+
+<link rel="alternate" href="/atom.xml" title="Kind & Lucky" type="application/atom+xml">
+</head>
+
+</html>
+
+<body>
+  
+  <canvas width="1777" height="841" style="position: fixed; left: 0px; top: 0px; z-index: 999; pointer-events: none;"></canvas>
+  
+  <div id="app">
+    <main class="content on">
+      <section class="outer">
+  <article id="post-hdfs" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  hdfs
+</h1>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/08/02/hdfs/" class="article-date">
+  <time datetime="2020-08-02T04:16:11.000Z" itemprop="datePublished">2020-08-02</time>
+</a>
+      
+      
+      
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> 字数统计:</span>
+            <span class="post-count">2.3k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> 阅读时长≈</span>
+            <span class="post-count">8 分钟</span>
+        </span>
+    </span>
+</div>
+
+      
+    </div>
+    
+
+    
+    
+    <div class="tocbot"></div>
+
+
+
+
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <blockquote>
+<p> 问题：分布式文件系统这么多，hadoop为什么还要开发一个hdfs文件系统？？？？</p>
+</blockquote>
+<h2 id="存储模型"><a href="#存储模型" class="headerlink" title="存储模型"></a>存储模型</h2><ul>
+<li>文件线性按字节切割成快（block），具有offset，id<ul>
+<li>offset是块偏移 id是标记</li>
+</ul>
+</li>
+<li>文件与文件的block大小可以不一样</li>
+<li>一个文件除最后一个block，其他block大小一样</li>
+<li>block大小依据硬件的I/O特性调整<ul>
+<li>根据硬盘的读取速度设置块大小</li>
+</ul>
+</li>
+<li>block被分散存放在集群的节点中，具有location<ul>
+<li>location是指块在哪个地址</li>
+</ul>
+</li>
+<li>block具有副本，没有主从概念，副本不能出现在同一节点</li>
+<li>副本时满足可靠性和性能的关键</li>
+<li>文件上传可以指定block大小和副本数，上传后只能修改副本数</li>
+<li>一次写入多次读取，不支持修改</li>
+<li>支持追加数据</li>
+</ul>
+<h2 id="架构设计"><a href="#架构设计" class="headerlink" title="架构设计"></a>架构设计</h2><ul>
+<li><p>HDFS是一个主从(Master/Slaves)架构</p>
+</li>
+<li><p>由一个NameNode和一些DataNode组成</p>
+</li>
+<li><p>面向文件包含:文件数据(data)和文件元数据(metadata)</p>
+<ul>
+<li>元数据是指文件的一些信息，不包括文件的数据内容</li>
+</ul>
+</li>
+<li><p>元数据包括文件属性和每个块存放在那个DataNode上</p>
+<ul>
+<li><img src="/2020/08/02/hdfs/image-20200803095529315.png" alt="image-20200803095529315"></li>
+</ul>
+</li>
+<li><p>NameNode负责存储和管理文件元数据，并维护了一个层次型的文件目录树</p>
+</li>
+<li><p>DataNode负责存储文件数据(block块)，并提供block的读写</p>
+</li>
+<li><p>DataNode与NameNode维持心跳，并汇报自己持有的block信息</p>
+</li>
+<li><p>Client和NameNode交互文件元数据和DataNode交互文件block数据</p>
+</li>
+</ul>
+<blockquote>
+<p>linux和windows文件系统的区别：</p>
+<ul>
+<li>windows上可能比较混乱，每台电脑的盘符都不一样<ul>
+<li>如果一个软件要加载G盘的一个文件，没有G盘就无法加载</li>
+</ul>
+</li>
+<li>linux系统没有盘符的概念，就是一个目录树<ul>
+<li>没有盘符的概念，要加载/g中文件，没有/g也可以创建</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>角色即JVM进程</p>
+</blockquote>
+<p><img src="/2020/08/02/hdfs/image-20200803085120039.png" alt="image-20200803085120039"></p>
+<p><strong>文件拆分和副本放置</strong></p>
+<p><img src="/2020/08/02/hdfs/image-20200803085322045.png" alt="image-20200803085322045"></p>
+<h2 id="角色功能"><a href="#角色功能" class="headerlink" title="角色功能"></a>角色功能</h2><ul>
+<li>NameNode：<ul>
+<li>完全基于内存存储文件元数据、目录结构、文件block的映射</li>
+<li>需要持久化方案保证数据可靠性</li>
+<li>提供副本防止策略</li>
+</ul>
+</li>
+<li>DataNode<ul>
+<li>基于本地磁盘存储的block（文件的形式）</li>
+<li>并保存block的校验和用来保证block的可靠性</li>
+<li>与NameNode保持心跳，回报block列表状态</li>
+</ul>
+</li>
+</ul>
+<h2 id="元数据持久化"><a href="#元数据持久化" class="headerlink" title="元数据持久化"></a>元数据持久化</h2><p> <strong>数据持久化方案：</strong></p>
+<ol>
+<li><p>日志文件：记录实时发生的增删改查的操作  ————–  文本文件</p>
+<ul>
+<li>完整性比较好</li>
+<li>加载恢复数据慢/占空间</li>
+</ul>
+</li>
+<li><p>快照、镜像、dump、db：间隔一段时间把内存的全量数据写入磁盘</p>
+<ul>
+<li>恢复速度快过日志文件</li>
+<li>因为是间隔的所以容易丢失一部分数据</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>一个问题举例：请问数据999999999占用多大磁盘空间     </p>
+<ul>
+<li>文件编码：txt -&gt; 以byte为单位存储  -&gt; 9个字节</li>
+<li>int a = 999999999 -&gt; 4个字节</li>
+</ul>
+<p>所以得出结论int类型存储小于二进制文件存储</p>
+</blockquote>
+<p>HDFS的持久化方案：</p>
+<ul>
+<li>EditsLog：日志<ul>
+<li>目标要保证日志体积小、记录少</li>
+</ul>
+</li>
+<li>FsImage：镜像、快照<ul>
+<li>目标要实现更快的滚动更新时点</li>
+</ul>
+</li>
+</ul>
+<p>解决方案：使用最近时点的FsImage + 短时间内的增量日志EditsLog </p>
+<blockquote>
+<p>问题：FsImage是怎么滚动更新的？</p>
+<p>有一种方案是NameNode隔一段时间就从内存中溢写一次，但是每次溢写都会产生大量的I/O消耗</p>
+<p>第二种方案是NameNode在机器第一次开机的时候写入一次FsImage，在机器运行不到时间间隔的期间内记录EditsLog，到时间就把日志恢复到FsImage中。但是这种方案有一个问题恢复日志也是需要消耗资源，要想解决这个问题就需要寻求另外一台机器进行恢复日志。</p>
+</blockquote>
+<h2 id="安全模式"><a href="#安全模式" class="headerlink" title="安全模式"></a>安全模式</h2><p>NameNode启动的流程：</p>
+<ul>
+<li><p>HDFS搭建时会格式化，格式化操作会产生一个空的FsImage</p>
+</li>
+<li><p>当NameNode启动时，它从磁盘中读取EditLog和FsImage</p>
+</li>
+<li><p>将所有EditLog中的事务作用在内存中的FsImage上</p>
+</li>
+<li><p>并且将新版本的FsImage从内存中保存在磁盘上</p>
+</li>
+<li><p>删除旧的EditLog，因为这个旧的EditLog的事务已经作用在了FsImage上了</p>
+</li>
+</ul>
+<p>NameNode启动时的安全模式：</p>
+<blockquote>
+<p>在持久化的时候文件的属性会持久化，但是元数据中的每个块存在那个DataNode的信息不会进行持久化，以防止给数据分配的DataNode已经失效，等待DataNode回复信息后再进行添加以保证DataNode的运行状态，这一过程就是安全模式。</p>
+</blockquote>
+<ul>
+<li>NameNode启动后会进行一个称为安全模式的特殊状态</li>
+<li>处于安全模式的NameNode是不会进行数据块的复制的</li>
+<li>NameNode从所有的DataNode接收心跳信号和状态报告</li>
+<li>每当NameNode检测确认某个数据块的副本数目达到这个最小值，那么该数据库会被认为是副本安全(safely replicated)的</li>
+<li>在一定百分比的数据被NameNode检测确认是安全之后，NameNode将会退出安全模式状态</li>
+<li>接下来它会确定还有哪些数据库的副本没有达到指定书目，并将数据块复制到DataNode上</li>
+</ul>
+<h2 id="HDFS中的SNN"><a href="#HDFS中的SNN" class="headerlink" title="HDFS中的SNN"></a>HDFS中的SNN</h2><blockquote>
+<p>SNN就是用来解决在数据持久化中数据滚动更新是用来运行EditLog向FsImage合并的机器</p>
+</blockquote>
+<p>SecondaryNameNode（SNN）</p>
+<ul>
+<li>在非Ha模式下，SNN一般是独立的节点，周期完成对NN的EditLog向FsImage合并，减少EditLog大小，减少NN启动时间。</li>
+<li>根据配置文件设置的时间间隔fs.checkpoint.period默认3600秒</li>
+<li>根据配置文件设置edits log大小fs.checkpoint.size规定edits文件的最大值默认是64MB</li>
+<li>满足以上两个条件都会触发合并</li>
+</ul>
+<p>过程：</p>
+<p><img src="/2020/08/02/hdfs/image-20200803100929400.png" alt="image-20200803100929400"></p>
+<h2 id="block的副本放置策略"><a href="#block的副本放置策略" class="headerlink" title="block的副本放置策略"></a>block的副本放置策略</h2><ul>
+<li>第一个副本：放置在上传文件的DN；如果是集群外提交，则随机挑选一台磁盘不太满，CPU不太忙的节点</li>
+<li>第二个副本：放在于第一个副本不同的机架的节点</li>
+<li>第三个副本：与第二个副本相同机架的节点</li>
+<li>更多副本：随机节点</li>
+</ul>
+<p><img src="/2020/08/02/hdfs/image-20200803103219479.png" alt="image-20200803103219479"></p>
+<blockquote>
+<p>第三个副本放置在同一个机架是因为不需要经过路由节省成本。</p>
+</blockquote>
+<h2 id="HDFS读写流程"><a href="#HDFS读写流程" class="headerlink" title="HDFS读写流程"></a>HDFS读写流程</h2><p><strong>写流程：</strong></p>
+<p><img src="/2020/08/02/hdfs/image-20200803104507763.png" alt="image-20200803104507763"></p>
+<ol>
+<li>HDFS客户端对数据进行拆分成block</li>
+<li>Client和NN连接创建文件元数据</li>
+<li>NN判定元数据是否有效</li>
+<li>NN触发副本放置策略，返回一个有序的DN列表</li>
+<li>Client和DN建立Pipeline连接（一个传输副本的通道）</li>
+<li>Client将block分成packet（64KB），并使用chunk（512B）</li>
+<li>Client将packet发送到队列dataqueue中，并向第一个DN发送</li>
+<li>第一个DN收到packet后本地保存发送给第二个DN</li>
+<li>第二个DN收到packet后本地保存并发给第三个DN</li>
+<li>这个过程中，上游节点同时同时发送下一个packet（相当于并行传输，第一个DN在接受完第一个包以后就进行传输，这样整个副本间数据传输就相当于穿了一次的时间多了一点点）</li>
+</ol>
+<blockquote>
+<ul>
+<li>HDFS使用这种传输方式，副本数对于Client是透明的</li>
+<li>当block传输完成，DN分别向各自的NN汇报，同时Client继续传输下一个blcok</li>
+<li>所以client传输和block汇报也是并行的</li>
+</ul>
+</blockquote>
+<p><strong>读流程：</strong></p>
+<p><img src="/2020/08/02/hdfs/image-20200803113347761.png" alt="image-20200803113347761"> </p>
+<ol>
+<li>client联系NN取回块的位置信息</li>
+<li>client读取每个块的数据时分别选择一个离自己最近的DN进行下载</li>
+</ol>
+<ul>
+<li><p>为了降低整体的带宽消耗和读延迟，HDFS会尽量让读取程序读取离他最近的副本</p>
+</li>
+<li><p>如果再读取程序的同一个机架上有一个副本，那么就读该副本</p>
+</li>
+<li><p>如果一个HDFS集群跨越多个数据中心，那么客户端也将首先读本地数据中心的副本</p>
+</li>
+<li><p>语义：</p>
+</li>
+<li><p>　　download a file</p>
+</li>
+<li><p>　　Client和NN交互文件元数据获取fileBlockLocation</p>
+</li>
+<li><p>　　NN按距离策略排序返回</p>
+</li>
+<li><p>　　Client尝试下载Block并且校验数据完整性（校验盒校验）</p>
+<blockquote>
+<p>下面这部分非常重要</p>
+</blockquote>
+</li>
+<li><p>语义：下载一个文件其实是获取文件的所有的Block元数据，那么子集获取block应该成立</p>
+</li>
+<li><p>　　Hdfs支持Client输出文件的offset自定义连接哪些Block的DN，自定义获取数据</p>
+</li>
+<li><p>　　这个是支持计算层的分治，并行计算的核心（牢记）</p>
+</li>
+</ul>
+<blockquote>
+<p>对问题的一个解答：</p>
+<p>问题：分布式文件系统这么多，hadoop为什么还要开发一个hdfs文件系统？？？？</p>
+<p>解答：hdfs是以块为单位进行存储的，client会在NN处获得每个块的存储位置，如果我们的程序只需要这个文件某一块上面的数据就可以直接连接该块的DN节点过去数据，可以少读取数据，即节省传输数据量又节省时间。这样可以更好地支持分布式计算，为分布式计算提供更快的文件读取速度和更少的文件读取量，节省了计算的时间和内存。</p>
+</blockquote>
+
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+        <div class="declare">
+          <ul class="post-copyright">
+            <li>
+              <i class="ri-copyright-line"></i>
+              <strong>版权声明： </strong>
+              本博客所有文章除特别声明外，著作权归作者所有。转载请注明出处！
+            </li>
+          </ul>
+        </div>
+        
+    <footer class="article-footer">
+      
+          
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://yoursite.com/2020/08/02/hdfs/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>
+      
+      
+
+    </footer>
+
+  </div>
+
+  
+  
+  <nav class="article-nav">
+    
+      <a href="/2020/08/02/paperArrange/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            paperArrange
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2020/07/30/docker/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">docker</div>
+      </a>
+    
+  </nav>
+
+
+  
+
+  
+  
+<!-- valine评论 -->
+<div id="vcomments-box">
+    <div id="vcomments">
+    </div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js'></script>
+<script>
+    new Valine({
+        el: '#vcomments',
+        app_id: 'dEVDDWhXqMT8KhXvNx1rDmmA-gzGzoHsz',
+        app_key: 'v0mSrHnmORU6F8eFbeOkbebr',
+        path: window.location.pathname,
+        notify: 'false',
+        verify: 'false',
+        avatar: 'monsterid',
+        placeholder: '给我的文章加点评论吧~',
+        recordIP: true
+    });
+    const infoEle = document.querySelector('#vcomments .info');
+    if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+        infoEle.childNodes.forEach(function (item) {
+            item.parentNode.removeChild(item);
+        });
+    }
+</script>
+<style>
+    #vcomments-box {
+        padding: 5px 30px;
+    }
+
+    @media screen and (max-width: 800px) {
+        #vcomments-box {
+            padding: 5px 0px;
+        }
+    }
+
+    #vcomments-box #vcomments {
+        background-color: #fff;
+    }
+
+    .v .vlist .vcard .vh {
+        padding-right: 20px;
+    }
+
+    .v .vlist .vcard {
+        padding-left: 10px;
+    }
+</style>
+
+  
+
+  
+  
+  
+  
+  
+
+</article>
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2020
+        <i class="ri-heart-fill heart_icon"></i> JM Zhang
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        由 <a href="https://hexo.io" target="_blank">Hexo</a> 强力驱动
+        <span class="division">|</span>
+        主题 - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/icon.svg" alt="Kind &amp; Lucky"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">时间轴</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/photos">相册</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="搜索">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/alipay.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/img/wechat.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Subtitle -->
+
+<script>
+  try {
+    var typed = new Typed("#subtitle", {
+      strings: ['每个人都会犯错，犯了错就会受到惩罚', '最重的惩罚叫做“自己不放过自己”，', '越善良的人越是如此。'],
+      startDelay: 0,
+      typeSpeed: 200,
+      loop: true,
+      backSpeed: 50,
+      showCursor: true
+    });
+  } catch (err) {
+    console.log(err)
+  }
+</script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+<!-- ClickLove -->
+
+<!-- ClickBoom -->
+
+
+<script src="/js/clickBoom.js"></script>
+
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+
+    
+  </div>
+</body>
+
+</html>

@@ -1,7 +1,2844 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>搜索算法2</title>
+    <title>k8s-1</title>
+    <url>/2020/10/23/k8s-1/</url>
+    <content><![CDATA[<p>概念<br>    什么是k8s<br>        k8s是一组服务器集群<br>        k8s所管理的集群节点上的容器</p>
+<pre><code>k8s的功能
+    自我修复
+    弹性伸缩：实时根据服务器的并发情况，增加或缩减容器数量
+    自动部署:
+    回滚：
+    服务发现和负载均衡
+    机密和配置共享管理
+
+k8s集群分为两类节点
+    master node：主
+    worker node：工作
+
+master节点的组件(程序)
+    apiserver：接受客户端操作可k8s的指令
+    schduler：从多个worker node节点的组件中选举一个来启动服务
+    controller manager：向worker节点的kubelet发送指令的
+
+node节点的组件(程序)
+    kubelet：向docker发送指令管理docker容器的
+    kubeproxy：管理docker容器的网络
+
+etcd
+    k8s的数据库
+    用来注册节点、服务、记录账户....
+
+核心概念
+pod
+    pod是k8s最小部署单元
+    一个pod中可以有一个或者多个容器一组容器
+    pod又称为容器组
+
+Controllers：控制器，控制pod，启动、停止、删除
+    ReplicaSet
+    Deployment
+    StatefulSet
+    DaemonSet
+    Job 
+    Cronjob
+
+service：服务
+    将一组pod关联起立，提供一个统一的入口
+    即使pod地址发生改变，这个统一入口也不会变化，可以保证用户访问不受影响
+
+label：标签
+    一组pod是一个统一的标签
+    service是通过标签和一组pod进行关联的
+
+namespace：名称空间
+    用来隔离pod的运行环境【默认情况下，pod是可以互相访问】
+    使用场景
+        为不同的公司提供隔离的pod运行环境
+        为开发环境、测试环境、生产环境分别准备不同的名称空间，进行隔离</code></pre><p>k8s中是否能直接启动容器？<br>    架构类别<br>        单master<br>        多master - 生产环境</p>
+<pre><code>生产环境k8s规划
+    master建议3台
+    etcd必须三台（3,5,7）
+    worder越多越好</code></pre><p>实验环境规划<br>    三个节点<br>        2G内存<br>        2核CPU</p>
+<p>部署单master集群<br>一、集群规划<br>    master<br>        主机名：k8s-master1<br>        IP：192.168.31.63<br>    worker1<br>        主机名：k8s-node1<br>        IP：192.168.31.65<br>    worker1<br>        主机名：k8s-node2<br>        IP：192.168.31.66</p>
+<pre><code>k8s版本：1.16
+安装方式：离线-二进制
+操作系统版本：7.7</code></pre><p>二、初始化服务器<br>    1 关闭防火墙<br>        【所有主节点都执行】<br>        [root@k8s-master1 ~]# systemctl stop firewalld<br>        [root@k8s-master1 ~]# systemctl disable firewalld</p>
+<pre><code>2 关闭selinux
+    【所有主节点都执行】
+    # setenforce 0
+    # vim /etc/selinux/config
+        修改SELINUX=enforcing 为 SELINUX=disabled
+
+3 配置主机名
+    【所有主节点都执行】
+    hostnamectl set-hostname 主机名
+
+4 配置名称解析
+    【所有主节点都执行】
+    # vi /etc/hosts
+    添加如下四行
+    192.168.31.63    k8s-master1
+    192.168.31.64    k8s-master2
+    192.168.31.65    k8s-node1
+    192.168.31.66    k8s-node2
+
+5 配置时间同步
+    选择一个节点作为服务端，剩下的作为客户端
+        master1为时间服务器的服务端
+        其他的为时间服务器的客户端
+
+    1）配置k8s-master1    
+        # yum install chrony -y
+        # vim /etc/chrony.config
+        修改三项
+            server 127.127.1.0 iburst
+            allow 192.168.31.0/24
+            local stratum 10
+        # systemctl start chronyd
+        # systemctl enable chronyd
+        # ss -unl | grep 123
+        UNCONN     0      0            *:123                      *:*   
+
+    2）配置k8s-node1 和k8s-node2
+        # yum install chrony -y
+        # vim /etc/chrony.conf
+            server 192.168.31.63 iburst
+        # systemctl start chronyd
+        # systemctl enable chronyd
+        # chronyc sources
+            210 Number of sources = 1
+            MS Name/IP address         Stratum Poll Reach LastRx Last sample               
+            ===============================================================================
+            ^* k8s-master1                  10   6    17     4    +11us[  +79us] +/-   95us
+6 关闭交换分区
+    【所有主节点都执行】
+    [root@k8s-master1 ~]# swapoff -a
+    [root@k8s-master1 ~]# vim /etc/fstab
+    删除一行:
+
+    检查是否关闭成功
+    [root@k8s-master1 ~]# free -m
+                  total        used        free      shared  buff/cache   available
+    Mem:           2827         157        2288           9         380        2514
+    Swap:             0           0           0</code></pre><p>三、给etcd颁发证书<br>    流程说简介<br>        1）创建证书颁发机构<br>        2）填写表单–写明etcd所在节点的IP<br>        3）向证书颁发机构申请证书</p>
+<pre><code>第一步：上传TLS安装包
+    传到/root下
+    略
+第二步：
+    # tar xvf /root/TLS.tar.gz
+    # cd /root/TLS
+    # vim server-csr.json 
+        修改host中的IP地址，这里的IP是etcd所在节点的IP地址
+        {
+            &quot;CN&quot;: &quot;etcd&quot;,
+            &quot;hosts&quot;: [
+                &quot;192.168.31.63&quot;,
+                &quot;192.168.31.65&quot;,
+                &quot;192.168.31.66&quot;
+                ],
+            &quot;key&quot;: {
+                &quot;algo&quot;: &quot;rsa&quot;,
+                &quot;size&quot;: 2048
+            },
+            &quot;names&quot;: [
+                {
+                    &quot;C&quot;: &quot;CN&quot;,
+                    &quot;L&quot;: &quot;BeiJing&quot;,
+                    &quot;ST&quot;: &quot;BeiJing&quot;
+                }
+            ]
+        }
+    # ./generate_etcd_cert.sh
+    # ls *pem
+        ca-key.pem  ca.pem  server-key.pem  server.pem</code></pre><p>四、部署etcd</p>
+<p>问题：<br>centos7<br>systemd服务管理脚本在那个目录？</p>
+<pre><code>etcd需要三台虚拟机
+在master、node1、node2上分别安装一个etcd
+
+注意：
+    解压之后会生成一个文件和一个目录
+
+    # tar xvf etcd.tar.gz 
+    # mv etcd.service /usr/lib/systemd/system
+    # vim /opt/etcd/cfg/etcd.conf
+        #[Member]
+        ETCD_NAME=&quot;etcd-1&quot;
+        ETCD_DATA_DIR=&quot;/var/lib/etcd/default.etcd&quot;
+        ETCD_LISTEN_PEER_URLS=&quot;https://192.168.31.63:2380&quot;
+        ETCD_LISTEN_CLIENT_URLS=&quot;https://192.168.31.63:2379&quot;
+
+        #[Clustering]
+        ETCD_INITIAL_ADVERTISE_PEER_URLS=&quot;https://192.168.31.63:2380&quot;
+        ETCD_ADVERTISE_CLIENT_URLS=&quot;https://192.168.31.63:2379&quot;
+        ETCD_INITIAL_CLUSTER=&quot;etcd-1=https://192.168.31.63:2380,etcd-2=https://192.168.31.65:2380,etcd-3=https://192.168.31.66:2380&quot;
+        ETCD_INITIAL_CLUSTER_TOKEN=&quot;etcd-cluster&quot;
+        ETCD_INITIAL_CLUSTER_STATE=&quot;new&quot;
+    # rm -rf /opt/etcd/ssl/*
+    # \cp -fv ca.pem server.pem server-key.pem /opt/etcd/ssl/ </code></pre><p>别名：<br>使用命令alias查看所有别名<br>别名就是用一个命令代替一组命令<br>如果想要不使用别名就在命令前添加\</p>
+<pre><code>将etc管理程序和程序目录发送到node1 和node2
+# scp /usr/lib/systemd/system/etcd.service root@k8s-node1:/usr/lib/systemd/system/
+# scp /usr/lib/systemd/system/etcd.service root@k8s-node2:/usr/lib/systemd/system/
+# scp -r /opt/etcd/ root@k8s-node2:/opt/
+# scp -r /opt/etcd/ root@k8s-node1:/opt/
+
+在node1上修改etcd的配置文件
+# vim /opt/etcd/cfg/etcd.conf
+#[Member]
+ETCD_NAME=&quot;etcd-2&quot;
+ETCD_DATA_DIR=&quot;/var/lib/etcd/default.etcd&quot;
+ETCD_LISTEN_PEER_URLS=&quot;https://192.168.31.65:2380&quot;
+ETCD_LISTEN_CLIENT_URLS=&quot;https://192.168.31.65:2379&quot;
+
+#[Clustering]
+ETCD_INITIAL_ADVERTISE_PEER_URLS=&quot;https://192.168.31.65:2380&quot;
+ETCD_ADVERTISE_CLIENT_URLS=&quot;https://192.168.31.65:2379&quot;
+ETCD_INITIAL_CLUSTER=&quot;etcd-1=https://192.168.31.63:2380,etcd-2=https://192.168.31.65:2380,etcd-3=https://192.168.31.66:2380&quot;
+ETCD_INITIAL_CLUSTER_TOKEN=&quot;etcd-cluster&quot;
+ETCD_INITIAL_CLUSTER_STATE=&quot;new&quot;
+
+在node2上修改etcd的配置文件
+# vim /opt/etcd/cfg/etcd.conf
+#[Member]
+ETCD_NAME=&quot;etcd-3&quot;
+ETCD_DATA_DIR=&quot;/var/lib/etcd/default.etcd&quot;
+ETCD_LISTEN_PEER_URLS=&quot;https://192.168.31.66:2380&quot;
+ETCD_LISTEN_CLIENT_URLS=&quot;https://192.168.31.66:2379&quot;
+
+#[Clustering]
+ETCD_INITIAL_ADVERTISE_PEER_URLS=&quot;https://192.168.31.66:2380&quot;
+ETCD_ADVERTISE_CLIENT_URLS=&quot;https://192.168.31.66:2379&quot;
+ETCD_INITIAL_CLUSTER=&quot;etcd-1=https://192.168.31.63:2380,etcd-2=https://192.168.31.65:2380,etcd-3=https://192.168.31.66:2380&quot;
+ETCD_INITIAL_CLUSTER_TOKEN=&quot;etcd-cluster&quot;
+ETCD_INITIAL_CLUSTER_STATE=&quot;new&quot;
+
+
+在三个节点一次启动etcd服务
+# systemctl start etcd
+   # systemctl enable etcd
+
+检查是否启动成功
+# /opt/etcd/bin/etcdctl --ca-file=/opt/etcd/ssl/ca.pem --cert-file=/opt/etcd/ssl/server.pem --key-file=/opt/etcd/ssl/server-key.pem --endpoints=&quot;https://192.168.31.63:2379,https://192.168.31.65:2379,https://192.168.31.66:2379&quot; cluster-health</code></pre><p>五、为api server签发证书<br>    # cd /root/TLS/k8s/<br>    # ./generate_k8s_cert.sh </p>
+<p>六、部署master服务<br>    # tar xvf k8s-master.tar.gz<br>    # mv kube-apiserver.service kube-controller-manager.service kube-scheduler.service /usr/lib/systemd/system/<br>    # mv kubernetes /opt/<br>    # cp /root/TLS/k8s/{ca*pem,server.pem,server-key.pem} /opt/kubernetes/ssl/ -rvf</p>
+<pre><code>修改apiserver的配置文件
+# vim /opt/kubernetes/cfg/kube-apiserver.conf 
+    KUBE_APISERVER_OPTS=&quot;--logtostderr=false \
+    --v=2 \
+    --log-dir=/opt/kubernetes/logs \
+    --etcd-servers=https://192.168.31.63:2379,https://192.168.31.65:2379,https://192.168.31.66:2379 \
+    --bind-address=192.168.31.63 \
+    --secure-port=6443 \
+    --advertise-address=192.168.31.63 \
+    --allow-privileged=true \
+    --service-cluster-ip-range=10.0.0.0/24 \
+    --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,ResourceQuota,NodeRestriction \
+    --authorization-mode=RBAC,Node \
+    --enable-bootstrap-token-auth=true \
+    --token-auth-file=/opt/kubernetes/cfg/token.csv \
+    --service-node-port-range=30000-32767 \
+    --kubelet-client-certificate=/opt/kubernetes/ssl/server.pem \
+    --kubelet-client-key=/opt/kubernetes/ssl/server-key.pem \
+    --tls-cert-file=/opt/kubernetes/ssl/server.pem  \
+    --tls-private-key-file=/opt/kubernetes/ssl/server-key.pem \
+    --client-ca-file=/opt/kubernetes/ssl/ca.pem \
+    --service-account-key-file=/opt/kubernetes/ssl/ca-key.pem \
+    --etcd-cafile=/opt/etcd/ssl/ca.pem \
+    --etcd-certfile=/opt/etcd/ssl/server.pem \
+    --etcd-keyfile=/opt/etcd/ssl/server-key.pem \
+    --audit-log-maxage=30 \
+    --audit-log-maxbackup=3 \
+    --audit-log-maxsize=100 \
+    --audit-log-path=/opt/kubernetes/logs/k8s-audit.log&quot;
+
+启动master
+    # systemctl start kube-apiserver
+    # systemctl enable kube-apiserver
+    # systemctl enable kube-scheduler
+    # systemctl start kube-scheduler
+    # systemctl start kube-controller-manager
+    # systemctl start kube-scheduler
+    # systemctl enable kube-controller-manager
+    # cp /opt/kubernetes/bin/kubectl /bin/
+
+
+检查启动结果
+    # ps aux |grep kube
+    # ps aux |grep kube | wc -4
+
+    # kubectl get cs
+    NAME                 AGE
+    controller-manager   &lt;unknown&gt;
+    scheduler            &lt;unknown&gt;
+    etcd-1               &lt;unknown&gt;
+    etcd-2               &lt;unknown&gt;
+    etcd-0               &lt;unknown&gt;
+
+配置tls 基于bootstrap自动颁发证书
+    # kubectl create clusterrolebinding kubelet-bootstrap \
+    --clusterrole=system:node-bootstrapper \
+    --user=kubelet-bootstrap</code></pre><p>七、安装worker node节点<br>    docker：启动容器<br>    kubelet：接受apiserver的指令，然后控制docker容器<br>    kube-proxy：为worker上的容器配置网络工作</p>
+<pre><code>第一步：安装配置docker
+    [root@k8s-node1 ~]# tar xvf k8s-node.tar.gz 
+    [root@k8s-node1 ~]# mv docker.service /usr/lib/systemd/system
+    [root@k8s-node1 ~]# mkdir /etc/docker
+    [root@k8s-node1 ~]# cp daemon.json /etc/docker
+    [root@k8s-node1 ~]# tar xf docker-18.09.6.tgz 
+    [root@k8s-node1 ~]# mv docker/* /bin/
+    [root@k8s-node1 ~]# systemctl start docker
+    [root@k8s-node1 ~]# systemctl enable docker
+    [root@k8s-node1 ~]# docker info
+
+第二步：安装kubelet和kube-proxy
+    1）生成程序目录和管理脚本
+        [root@k8s-node1 ~]# tar xvf k8s-node.tar.gz     
+        [root@k8s-node1 ~]# mv kubelet.service kube-proxy.service /usr/lib/systemd/system/
+        [root@k8s-node1 ~]# mv kubernetes /opt/
+
+    2）修改配置文件（4个）
+        [root@k8s-node1 ~]# vim /opt/kubernetes/cfg/kube-proxy.kubeconfig
+        修改一行：server: https://192.168.31.63:6443
+        这里指定的是master的ip地址
+
+        [root@k8s-node1 ~]# vi /opt/kubernetes/cfg/bootstrap.kubeconfig
+        修改一行：server: https://192.168.31.63:6443
+        这里指定的是master的ip地址
+
+        [root@k8s-node1 ~]# vim /opt/kubernetes/cfg/kube-proxy-config.yml
+        修改一行：hostnameOverride: k8s-node1
+        这里是指定当前主机的主机名
+
+        [root@k8s-node1 ~]# vim /opt/kubernetes/cfg/kubelet.conf 
+        修改一行：--hostname-override=k8s-node1 \
+        这里是指定当前主机的主机名
+
+    3）从master节点复制证书到worker节点
+        [root@k8s-master1 ~]# cd /root/TLS/k8s/
+        [root@k8s-master1 k8s]# scp ca.pem kube-proxy.pem kube-proxy-key.pem root@k8s-node1:/opt/kubernetes/ssl/
+
+    4）启动kubelet和kube-proxy服务
+        [root@k8s-node1 ~]# systemctl start kube-proxy
+        [root@k8s-node1 ~]# systemctl start kubelet
+        [root@k8s-node1 ~]# systemctl enable kubelet
+        [root@k8s-node1 ~]# systemctl enable kube-proxy
+
+        [root@k8s-node1 ~]# tail -f /opt/kubernetes/logs/kubelet.INFO 
+        如果看到最后一行信息是如下内容，就表示启动服务政策：
+        No valid private key and/or certificate found, reusing existing private key or creating a new one
+
+    5）在master节点为worker节点颁发证书
+        [root@k8s-master1 k8s]# kubectl get csr
+        NAME                                                   AGE    REQUESTOR           CONDITION
+        node-csr-Uu61q1J1nAJ0AprrHc9rcSPVU0qSsD-Z4qDdapDvsWo   6m6s   kubelet-bootstrap   Pending
+
+        [root@k8s-master1 k8s]# kubectl certificate approve node-csr-Uu61q1J1nAJ0AprrHc9rcSPVU0qSsD-Z4qDdapDvsWo
+        注意：名称必须用自己的名称，不要抄我的
+
+    6）给worker节点颁发证书之后，就可以在master上看到worker节点了
+        [root@k8s-master1 k8s]# kubectl get node
+        NAME        STATUS     ROLES    AGE     VERSION
+        k8s-node1   NotReady   &lt;none&gt;   5h13m   v1.16.0
+        k8s-node2   NotReady   &lt;none&gt;   3s      v1.16.0
+
+第三步：安装网络插件
+    1）确认启用CNI
+        [root@k8s-node1 ~]# grep &quot;cni&quot; /opt/kubernetes/cfg/kubelet.conf
+        --network-plugin=cni \
+
+    2）安装CNI
+        [root@k8s-node1 ~]# mkdir -pv /opt/cni/bin /etc/cni/net.d
+        [root@k8s-node1 ~]# tar xf k8s-node.tar.gz
+        [root@k8s-node1 ~]# tar xf cni-plugins-linux-amd64-v0.8.2.tgz -C /opt/cni/bin
+
+    3）在master上执行yaml脚本，实现在worker节点安装启动网络插件功能
+        [root@k8s-master1 YAML]# kubectl apply -f kube-flannel.yaml
+        注意：
+            这个操作受限于网络，可能会需要5~10分钟才能执行成功
+            如果网上太慢，会导致超时
+
+        [root@k8s-master1 YAML]# kubectl get pods -n kube-system
+        NAME                          READY   STATUS              RESTARTS   AGE
+        kube-flannel-ds-amd64-6h5dg   1/1     Running             0          2m29s
+        kube-flannel-ds-amd64-cgbqj   1/1     Running             0          2m29s
+
+        查看worker节点的状态
+        [root@k8s-master1 YAML]# kubectl get nodes
+        NAME        STATUS     ROLES    AGE     VERSION
+        k8s-node1   Ready      &lt;none&gt;   5h33m   v1.16.0
+        k8s-node2   Ready      &lt;none&gt;   19m     v1.16.0
+
+第四步：授权apiserver可以访问kubelet
+    [root@k8s-master1 YAML]# kubectl apply -f apiserver-to-kubelet-rbac.yaml </code></pre><p>​<br>八、启动nginx容器</p>
+<pre><code>1）修改node1和node2的docker配置文件
+    [root@k8s-node1 ~]# vim /etc/docker/daemon.json 
+    {
+        &quot;registry-mirrors&quot;: [
+               &quot;https://mzxx8xy8.mirror.aliyuncs.com&quot;,
+               &quot;http://bc437cce.m.daocloud.io&quot;
+               ],
+        &quot;insecure-registries&quot;: [&quot;192.168.31.70&quot;]
+    }
+
+2）重启服务
+    [root@k8s-node1 ~]# systemctl daemon-reload
+    [root@k8s-node1 ~]# systemctl restart docker
+
+3）在master上启动nginx
+    创建deployment，通过deployment来创建和管理nginx容器
+    [root@k8s-master1 tmp]# kubectl create deployment myweb --image=nginx:1.8
+    deployment.apps/myweb created
+
+    查看一下deployment的状态
+    [root@k8s-master1 tmp]# kubectl get deployment
+    NAME    READY   UP-TO-DATE   AVAILABLE   AGE
+    myweb   0/1     1            0           24s
+
+    查看pode的状态
+    [root@k8s-master1 tmp]# kubectl get pods
+    NAME                     READY   STATUS    RESTARTS   AGE
+    myweb-5b79bf86d4-8kv4d   1/1     Running   0          119s
+
+4）暴露myweb的端口到物理机
+    [root@k8s-master1 tmp]# kubectl expose deployment myweb --port=80 --type=NodePort
+
+    查看当前将80映射到了哪个端口
+    [root@k8s-master1 tmp]# kubectl get svc
+    NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE
+    myweb        NodePort    10.0.0.18    &lt;none&gt;        80:30828/TCP   23s
+
+5）访问集群任意节点的30828来访问nginx
+    [root@k8s-master1 tmp]# yum install curl -y
+    [root@k8s-master1 tmp]# curl http://192.168.31.65:30828</code></pre><p>九、配置web界面<br>    两种<br>        官方：kubernetes dashboard<br>        第三方：kuboard</p>
+<pre><code>安装：dashboard
+    [root@k8s-master1 tmp]# kubectl apply -f /root/k8sFiles/YAML/dashboard.yaml 
+
+    [root@k8s-master1 tmp]# kubectl get pods -n kubernetes-dashboard
+    NAME                                         READY   STATUS    RESTARTS   AGE
+    dashboard-metrics-scraper-566cddb686-mt2p6   1/1     Running   0          51s
+    kubernetes-dashboard-7b5bf5d559-hwfn9        1/1     Running   0          51s
+
+    [root@k8s-master1 tmp]# kubectl get svc -n kubernetes-dashboard
+    NAME                        TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)         AGE
+    dashboard-metrics-scraper   ClusterIP   10.0.0.4     &lt;none&gt;        8000/TCP        2m9s
+    kubernetes-dashboard        NodePort    10.0.0.197   &lt;none&gt;        443:30001/TCP   2m9s
+
+
+安装：kuboard
+
+
+[root@k8s-master1 tmp]# vim start_kuboard.yaml 
+修改一行，指定希望kuboard运行在哪个节点：- name: kuboard
+
+
+
+[root@k8s-master1 tmp]# kubectl apply -f start_kuboard.yaml 
+[root@k8s-master1 tmp]# kubectl get pods -n kube-system
+NAME                          READY   STATUS    RESTARTS   AGE
+kuboard-c665d7966-w7q9m       1/1     Running   0          27s
+
+
+查看一下kuboard的暴露的端口
+[root@k8s-master1 tmp]# kubectl get svc -n kube-system
+NAME       TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)         AGE
+kube-dns   ClusterIP   10.0.0.2     &lt;none&gt;        53/UDP,53/TCP   5h5m
+kuboard    NodePort    10.0.0.69    &lt;none&gt;        80:32567/TCP    2m22s</code></pre><p>centos7<br>    systemd 服务管理脚本在哪个目录？<br>    /usr/lib/systemd/system</p>
+<p>centos6<br>    sysV风格服务管理脚本在哪？<br>    /etc/rc.d/rcN.d<br>        N 0 1 2 3 4 5 6</p>
+<p>#################################################<br>加密<br>    对称加密：加密解密用相同的密钥<br>    非对称加密：用公钥~私钥的密钥对实现加解密<br>    单向加密：只能加密，不能解密，MD5</p>
+<p>ssl证书来源<br>    网络第三方机构购买，通常这种证书是用于让外部用户访问使用<br>    自己给自己发证书-自签证书，通常用于内部环境</p>
+<pre><code>签证机构（CA）</code></pre><p>自建CA<br>    openssl<br>    cfssl</p>
+<p>##############################################################################<br>2月10日 作业:<br>    内容：<br>        三台虚拟机：2C 2G<br>        三个虚拟机完成初始化</p>
+<pre><code>提交内容：
+    提交6项系统初始化结果截图
+
+提交时间：
+    2月11日中午11点前</code></pre><p>###############################################################################</p>
+<p>2月11日 作业:<br>    内容：<br>        在前一天的基础上，完成master节点的部署</p>
+<pre><code>提交内容：
+    最终部署结果，要求能看到kube相关的三个进程，也可以执行kubectl get cs，返回结果是
+    # kubectl get cs
+    NAME                 AGE
+    controller-manager   &lt;unknown&gt;
+    scheduler            &lt;unknown&gt;
+    etcd-1               &lt;unknown&gt;
+    etcd-2               &lt;unknown&gt;
+    etcd-0               &lt;unknown&gt;
+
+提交时间：
+    2月12日中午11点前
+
+
+ps aux | grep kube
+看不到api server，说明服务没有启动，故障排除的思路
+1）分析日志文件(/opt/kubernetes/log/kube-apiserver.INFO)
+2）systemctl status kube-apiserver
+
+导致apiserver异常的可能
+1）api server的配置文件写错了
+    往往是ip地址写错了
+
+2）api server无法访问etcd服务
+    etcd的证书文件缺少、损坏（/opt/etc/ssl--&gt;cat.pem server.pem server-key.pem）
+    etcd服务异常</code></pre><p>######################################################################</p>
+<p>2月12日作业<br>    作业内容：<br>        部署两个node节点{配置相同}<br>        安装docker<br>        安装kubelet kube-proxy</p>
+<pre><code>最终结果
+    [root@k8s-master1 k8s]# kubectl get node
+        NAME        STATUS     ROLES    AGE     VERSION
+        k8s-node1   NotReady   &lt;none&gt;   5h13m   v1.16.0
+        k8s-node2   NotReady   &lt;none&gt;   3s      v1.16.0</code></pre><p>#########################################################################<br>2月13日作业<br>    部署两个node节点<br>    在12号作业基础上安装网络插件，节点状态变为ready<br>    部署一个k8s web管理界面</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>cloudsim-1</title>
+    <url>/2020/08/28/cloudsim-1/</url>
+    <content><![CDATA[<h2 id="例子代码-1"><a href="#例子代码-1" class="headerlink" title="例子代码-1"></a>例子代码-1</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">cloudSiomExample</span>:</span></span><br><span class="line">    定义云任务列表</span><br><span class="line">    定义虚拟机列表</span><br><span class="line">    主函数:</span><br><span class="line">        <span class="number">1.</span>初始化cloudsim</span><br><span class="line">        <span class="number">2.</span>创建数据中心</span><br><span class="line">        <span class="number">3.</span>创建代理</span><br><span class="line">        <span class="number">4.</span>创建虚拟机</span><br><span class="line">        	创建两个虚拟机</span><br><span class="line">            把虚拟机加入虚拟机列表</span><br><span class="line">            把虚拟机列表提交到代理</span><br><span class="line">        <span class="number">5.</span>创建云任务</span><br><span class="line">        	创建两个id不同的云任务</span><br><span class="line">            把两个云任务加入云任务列表</span><br><span class="line">            把云任务列表添加到代理</span><br><span class="line">        <span class="number">6.</span>使用代理将云任务绑定到虚拟机</span><br><span class="line">    	<span class="number">7.</span>启动cloudsim</span><br><span class="line">        <span class="number">8.</span>关闭cloudsim</span><br><span class="line">        <span class="number">9.</span>获取输出</span><br><span class="line">           </span><br><span class="line">	创建数据中心函数:</span><br><span class="line">        定义主机列表</span><br><span class="line">        定义pe（cpu核心）列表</span><br><span class="line">        根据mips创建pe添加到pe列表中</span><br><span class="line">        创建主机加入主机列表</span><br><span class="line">        创建一个DatacenterCharacteristics对象，该对象存储数据中心的属性：体系结构、操作系统、计算机列表、分配策略：共享时间或空间、时区及其价格</span><br><span class="line">        创建存储对象</span><br><span class="line">        创建数据中心对象</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>创建vm虚拟机</li>
+<li>创建云任务</li>
+<li>创建broker代理</li>
+<li>创建数据中心</li>
+</ul>
+<h3 id="仿真步骤："><a href="#仿真步骤：" class="headerlink" title="仿真步骤："></a>仿真步骤：</h3><ol>
+<li>初始化cloudsim包</li>
+<li>创建数据中心<ol>
+<li>创建主机列表</li>
+<li>创建PE列表</li>
+<li>创建PE并用add加入列表</li>
+<li>创建主机</li>
+<li>创建数据中心特征</li>
+<li>创建数据中心对象</li>
+</ol>
+</li>
+<li>创建数据中心代理<ul>
+<li>根据用户的QoS协调用户及服务供应商和部署服务任务</li>
+</ul>
+</li>
+<li>创建虚拟机</li>
+<li>创建云任务</li>
+<li>执行任务调度策略</li>
+<li>启动仿真</li>
+<li>打印结果</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>scala-1</title>
+    <url>/2020/08/21/scala-1/</url>
+    <content><![CDATA[<h2 id="scala-与-java-对比"><a href="#scala-与-java-对比" class="headerlink" title="scala 与 java 对比"></a>scala 与 java 对比</h2><h3 id="流程对比"><a href="#流程对比" class="headerlink" title="流程对比"></a>流程对比</h3><p><img src="/2020/08/21/scala-1/image-20200821230402518.png" alt="image-20200821230402518"></p>
+<h3 id="代码对比"><a href="#代码对比" class="headerlink" title="代码对比"></a>代码对比</h3><p>java：</p>
+<p><img src="/2020/08/21/scala-1/image-20200821231025475.png" alt="image-20200821231025475"></p>
+<p>scala：</p>
+<p><img src="/2020/08/21/scala-1/image-20200821231040206.png" alt="image-20200821231040206"></p>
+<h2 id="基础"><a href="#基础" class="headerlink" title="基础"></a>基础</h2><p><img src="/2020/08/21/scala-1/image-20200822000640684.png" alt="image-20200822000640684"></p>
+<ul>
+<li><p>定义字符串</p>
+<ul>
+<li>双引号<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822094044585.png" alt="image-20200822094044585"></li>
+</ul>
+</li>
+<li>插值表达式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822094023860.png" alt="image-20200822094023860"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822093954421.png" alt="image-20200822093954421"></li>
+</ul>
+</li>
+<li>三引号<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822094011015.png" alt="image-20200822094011015"></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>惰性赋值</p>
+<ul>
+<li>对变量的值进行延迟加载，不会在定义时候加载，只有在使用到的时候才会去加载</li>
+<li><img src="/2020/08/21/scala-1/image-20200822094144623.png" alt="image-20200822094144623"></li>
+</ul>
+</li>
+<li><p>数据类型</p>
+<ul>
+<li>scala和java一样都是强类型语言</li>
+<li><img src="/2020/08/21/scala-1/image-20200822094528674.png" alt="image-20200822094528674"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822094546671.png" alt="image-20200822094546671"></li>
+<li>数据类型的继承关系<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822094807879.png" alt="image-20200822094807879"></li>
+<li>val b:Int = null ：这句会报错因为null不能转化成Int类型</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>类型转换</p>
+<ul>
+<li><p>自动类型转换</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822105811319.png" alt="image-20200822105811319"></li>
+</ul>
+</li>
+<li><p>强制类型转换</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822105743368.png" alt="image-20200822105743368"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822095254553.png" alt="image-20200822095254553"></li>
+</ul>
+</li>
+<li><p>值类型和字符串类型之间的相互转换</p>
+<ul>
+<li><p><img src="/2020/08/21/scala-1/image-20200822105938378.png" alt="image-20200822105938378"></p>
+</li>
+<li><p><img src="/2020/08/21/scala-1/image-20200822110624752.png" alt="image-20200822110624752"></p>
+<p><img src="/2020/08/21/scala-1/image-20200822110715375.png" alt="image-20200822110715375"></p>
+</li>
+</ul>
+</li>
+<li><p>键盘录入</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822110919572.png" alt="image-20200822110919572"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822110912224.png" alt="image-20200822110912224"></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="运算符"><a href="#运算符" class="headerlink" title="运算符"></a>运算符</h3><ul>
+<li>运算符的分类<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822111845402.png" alt="image-20200822111845402"></li>
+</ul>
+</li>
+<li>算数运算符<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822111908686.png" alt="image-20200822111908686"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822111924551.png" alt="image-20200822111924551"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822112110095.png" alt="image-20200822112110095"></li>
+</ul>
+</li>
+<li>赋值运算符<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822112212841.png" alt="image-20200822112212841"></li>
+</ul>
+</li>
+<li>关系运算符<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822112314583.png" alt="image-20200822112314583"></li>
+</ul>
+</li>
+<li>逻辑运算符<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822112410275.png" alt="image-20200822112410275"></li>
+</ul>
+</li>
+<li>位运算<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822112626803.png" alt="image-20200822112626803"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822112730143.png" alt="image-20200822112730143"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822112741410.png" alt="image-20200822112741410"></li>
+</ul>
+</li>
+</ul>
+<h3 id="代码结构"><a href="#代码结构" class="headerlink" title="代码结构"></a>代码结构</h3><ul>
+<li>顺序结构<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113017385.png" alt="image-20200822113017385"></li>
+</ul>
+</li>
+<li>选择结构<ul>
+<li>单分支<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113119096.png" alt="image-20200822113119096"></li>
+</ul>
+</li>
+<li>双分支<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113143954.png" alt="image-20200822113143954"></li>
+</ul>
+</li>
+<li>多分支<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113202857.png" alt="image-20200822113202857"></li>
+</ul>
+</li>
+<li>注意<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113254725.png" alt="image-20200822113254725"></li>
+<li>注意:scala判断可以有返回值</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>块表达式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822113707626.png" alt="image-20200822113707626"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822114112272.png" alt="image-20200822114112272"></li>
+</ul>
+</li>
+<li>循环<ul>
+<li>for<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822133053032.png" alt="image-20200822133053032"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822133338973.png" alt="image-20200822133338973"></li>
+</ul>
+</li>
+<li>守卫<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822134237975.png" alt="image-20200822134237975"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822134221886.png" alt="image-20200822134221886"></li>
+</ul>
+</li>
+<li>推导式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822134700288.png" alt="image-20200822134700288"></li>
+</ul>
+</li>
+<li>while<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822134821705.png" alt="image-20200822134821705"></li>
+</ul>
+</li>
+<li>do… while…<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822134910070.png" alt="image-20200822134910070"></li>
+</ul>
+</li>
+<li>break 和continue<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822135151480.png" alt="image-20200822135151480"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822135100487.png" alt="image-20200822135100487"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822135257856.png" alt="image-20200822135257856"></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="方法和函数"><a href="#方法和函数" class="headerlink" title="方法和函数"></a>方法和函数</h3><ul>
+<li><p>方法</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822143408397.png" alt="image-20200822143408397"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822144207202.png" alt="image-20200822144207202"></li>
+<li>注意：递归方法的返回值类型不可以省略</li>
+</ul>
+</li>
+<li><p>惰性方法</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822150112130.png" alt="image-20200822150112130"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822150335230.png" alt="image-20200822150335230"></li>
+</ul>
+</li>
+<li><p>方法参数</p>
+<ul>
+<li>默认参数</li>
+<li>带名参数<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822195313993.png" alt="image-20200822195313993"></li>
+</ul>
+</li>
+<li>边长参数<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822195118907.png" alt="image-20200822195118907"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822195231130.png" alt="image-20200822195231130"></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>方法调用方式</p>
+<ul>
+<li>后缀调用方式</li>
+<li>中缀调用方式</li>
+<li>花括号调用方式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822203633112.png" alt="image-20200822203633112"></li>
+</ul>
+</li>
+<li>无括号调用方式<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822203704230.png" alt="image-20200822203704230"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822203712754.png" alt="image-20200822203712754"></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>函数</p>
+<ul>
+<li><img src="/2020/08/21/scala-1/image-20200822204326887.png" alt="image-20200822204326887"></li>
+<li><img src="/2020/08/21/scala-1/image-20200822230850838.png" alt="image-20200822230850838"></li>
+</ul>
+</li>
+<li><p>方法和函数的区别</p>
+<ul>
+<li><p><img src="/2020/08/21/scala-1/image-20200822233359725.png" alt="image-20200822233359725"></p>
+</li>
+<li><p>方法无法直接赋值给变量</p>
+<p><img src="/2020/08/21/scala-1/image-20200822233851643.png" alt="image-20200822233851643"></p>
+</li>
+<li><p>所以需要将方法转换为函数</p>
+<p><img src="/2020/08/21/scala-1/image-20200822233941507.png" alt="image-20200822233941507"></p>
+</li>
+</ul>
+</li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
+    <title>mapreduce2</title>
+    <url>/2020/08/21/mapreduce2/</url>
+    <content><![CDATA[<h1 id="mapreduce调度原理"><a href="#mapreduce调度原理" class="headerlink" title="mapreduce调度原理"></a>mapreduce调度原理</h1><p>MapReduce是一种批量计算，就是给你一批数据然后进行计算，map和reduce是一种阻塞关系</p>
+<h2 id="MP计算框架"><a href="#MP计算框架" class="headerlink" title="MP计算框架"></a>MP计算框架</h2><h3 id="Q：计算向数据移动是怎么实现的？"><a href="#Q：计算向数据移动是怎么实现的？" class="headerlink" title="Q：计算向数据移动是怎么实现的？"></a>Q：计算向数据移动是怎么实现的？</h3><p>hdfs会暴露数据的位置</p>
+<ol>
+<li>资源管理</li>
+<li>任务调度</li>
+</ol>
+<p>角色：</p>
+<p>jobTracker和TaskTrack保持心跳，监控各个存放副本的节点中计算能力的大小。（比如内存、cpu）</p>
+<ul>
+<li><p>JobTracker</p>
+<ol>
+<li>资源调度</li>
+<li>任务调度</li>
+</ol>
+</li>
+<li><p>TaskTracker</p>
+<ol>
+<li>任务调度</li>
+<li>资源汇报</li>
+</ol>
+</li>
+<li><p>客户端（client）</p>
+<ol>
+<li><p>会根据每次的计算数据，咨询NN元数据（block） ==》计算切片  最终得到一个切片的清单，map的数量就有了</p>
+<blockquote>
+<p>split是逻辑的，block是物理的，block有（offset,location），split和block有映射关系</p>
+</blockquote>
+<p>结果 ==》 split包含偏移量，以及split对应的map任务应该移动到那个节点（DN副本）执行</p>
+<p>可以支持计算向数据移动了</p>
+</li>
+<li><p>会生成计算程序未来运行时的相关配置文件：xxx.xml</p>
+</li>
+<li><p>未来的移动应该相对可靠</p>
+<ul>
+<li>客户端会将jar、split清单、配置文件xml上传到hdfs的目录中（上传的数据，副本数为10）</li>
+</ul>
+</li>
+<li><p>client会调用JobTrack，通知要启动一个计算程序了，并告知文件都放在hdfs哪些地方</p>
+<p>JobTracker收到启动程序后：</p>
+<ol>
+<li>从hdfs中取回split清单</li>
+<li>根据自己收到的TaskTracter回报的资源，最终确定每一个split对应的map应该去到哪一个节点。（确定清单）</li>
+<li>未来，TT再心跳的时候会取回分配给自己的任务信息。</li>
+</ol>
+<p>TaskTracter：</p>
+<ol>
+<li>在心跳取回任务后</li>
+<li>从hdfs中下载jar，xml到本机</li>
+<li>最终启动任务描述中的MapTask/ReduceTask</li>
+</ol>
+<p>问题：</p>
+<p>JobTracker的3个问题：</p>
+<ol>
+<li>单点障碍</li>
+<li>压力过大</li>
+<li>集成了资源调度和任务调度，两者耦合</li>
+</ol>
+<p>JobTracker的弊端：</p>
+<ol>
+<li>重复造轮子</li>
+<li>因为各自实现资源管理，但是他们部署在同一批硬件上，因为隔离，所以不能感知到对方的使用。结果就是会造成资源的争抢。</li>
+</ol>
+<p><img src="/2020/08/21/mapreduce2/image-20200821153250775.png" alt="image-20200821153250775"></p>
+<p><img src="/2020/08/21/mapreduce2/image-20200821154823778.png" alt="image-20200821154823778"></p>
+</li>
+</ol>
+</li>
+</ul>
+<h2 id="yarn管理"><a href="#yarn管理" class="headerlink" title="yarn管理"></a>yarn管理</h2><p>YARN是Hadoop2.0版本引进的资源管理系统，直接从MR1演化而来。<br>核心思想：将MR1中的JobTracker的资源管理和作业调度两个功能分开，分别由ResourceManager和ApplicationMaster进程实现。</p>
+<p>模型：</p>
+<ul>
+<li><p>container容器（注意此处的容器不是docker）</p>
+<ul>
+<li><p>虚的（不是真实的容器）</p>
+<ul>
+<li>是一个对象：属性有：属于哪个NameManger，cpu，内存，io量</li>
+</ul>
+</li>
+<li><p>物理的</p>
+<ul>
+<li><p>一个JVM进程 ==&gt; 操作系统进程</p>
+<ul>
+<li><p>nodeManager会有线程监控容器资源，当资源使用超额由nodeManage直接kill掉</p>
+</li>
+<li><p>cgroup内核级技术：在启动jvm进程，由kernel（内核）杀死</p>
+<blockquote>
+<p>cgroup是 Control Groups 的缩写，是 Linux 内核提供的一种可以限制、记录、隔离进程组 (process groups) 所使用的物力资源 (如 cpu memory i/o 等等) 的机制。是虚拟化技术的基础。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>实现：架构/框架</p>
+<p>ResourceManager 主</p>
+<ul>
+<li>负责整体资源的管理</li>
+</ul>
+<p>NodeManager 从</p>
+<ul>
+<li>想RM汇报心跳，提交自己的资源情况</li>
+</ul>
+<h3 id="MR运行-（MapReduce-on-yarn）"><a href="#MR运行-（MapReduce-on-yarn）" class="headerlink" title="MR运行 （MapReduce on yarn）"></a>MR运行 （MapReduce on yarn）</h3><ol>
+<li>MR-client （切片清单/配置/jar/上传到hdfs）访问RM申请AppMaster</li>
+<li>RS选择一台不忙的NM节点启动一个container，在里面反射一个MRAppMaster</li>
+<li>启动MRAppMaster，从HDFS下载切片清单，向RM申请资源</li>
+<li>有RM根据自己掌握的资源情况得到一个确认清单，然后通知NN启动container</li>
+<li>container启动后会反向注册到已经启动的MRAppMaster进程</li>
+<li>MRAppMaster（曾经的JobTracker阉割版不带资源管理）最终将任务Task发送给container（消息）</li>
+<li>container会反射相应的Task类为对象，调用方法执行，其结果就是我们的业务逻辑代码的执行</li>
+<li>计算框架都有Task失败重试的机制</li>
+</ol>
+<p>结论：</p>
+<p>JobTracker的3个问题：</p>
+<ol>
+<li>单点障碍<ul>
+<li>曾经是全局的，JT挂掉了整个计算层都没有了调度</li>
+<li>yarn：每一个APP由一个自己的AppMaster调度（计算程序级别），如果AppMaster挂掉了yarn可以重新生成</li>
+</ul>
+</li>
+<li>压力过大<ul>
+<li>yarn中每个计算程序自有AppMaster，每个AppMaster只负责自己计算程序的任务调度，轻量了</li>
+<li>AppMaster默认是在不同的节点中启动的，默认有了负载的光环</li>
+</ul>
+</li>
+<li>集成了资源调度和任务调度，两者耦合<ul>
+<li>因为yarn只是资源管理，不负责具体的任务调度，所以只要计算框架继承了yarn的AppMaster，大家都可以使用一个统一的视图的资源层。</li>
+</ul>
+</li>
+</ol>
+<p>总结：从1.x到2.x，在1.x中JT,TT是MR的常服务，是一直执行的</p>
+<p>2.x之后就没有了这些常服务，相对的MR得client，调度，任务这些都是临时服务了</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>concurProgram</title>
+    <url>/2020/08/18/concurProgram/</url>
+    <content><![CDATA[<h1 id="并发编程"><a href="#并发编程" class="headerlink" title="并发编程"></a>并发编程</h1><h2 id="1-多进程"><a href="#1-多进程" class="headerlink" title="1. 多进程"></a>1. 多进程</h2><p>1.1 基础知识</p>
+<ul>
+<li>执行进程任务的是cpu</li>
+<li>进程与程序的区别：程序仅仅只是一串串代码而已，而进程指的是程序的运行过程</li>
+<li>并行和并发：实现同时运行的两种方式<ul>
+<li>并行是多个cpu同时执行多个进程</li>
+<li>并发是单个cpu轮着执行多个进程</li>
+</ul>
+</li>
+<li>四种创建进程的情况<ol>
+<li>系统初始化（开机自动运行的程序）<ul>
+<li>前台进程负责与用户交互，如qq这种自动运行的软件</li>
+<li>后台进程与用户无关，只有在需要时才被唤醒，成为守护进程，如电子邮件、web网页、打印</li>
+</ul>
+</li>
+<li>一个程序运行时创建子进程</li>
+<li>用户的交互开启进程（比如点击某个软件）</li>
+<li>程序仅仅只是一串串代码而已，而进程指的是程序的运行过程</li>
+</ol>
+</li>
+<li>无论哪一种，新进程的创建都是由一个已经存在的进程执行了一个用于创建进程的系统调用而创建的：<ol>
+<li>在UNIX中该系统调用是：fork，fork会创建一个与父进程一模一样的副本，二者有相同的存储映像、同样的环境字符串和同样的打开文件（在shell解释器进程中，执行一个命令就会创建一个子进程）</li>
+<li>在windows中该系统调用是：CreateProcess，CreateProcess既处理进程的创建，也负责把正确的程序装入新进程。</li>
+</ol>
+</li>
+<li>UNIX和windows关于创建子进程<ul>
+<li>相同的是：进程创建后，父进程和子进程有各自不同的地址空间（多道技术要求物理层面实现进程之间内存的隔离），任何一个进程的在其地址空间中的修改都不会影响到另外一个进程。</li>
+<li>不同的是：在UNIX中，子进程的初始地址空间是父进程的一个副本，提示：子进程和父进程是可以有只读的共享内存区的。但是对于windows系统来说，从一开始父进程与子进程的地址空间就是不同的。</li>
+</ul>
+</li>
+<li>进程终止<ul>
+<li>正常退出（自愿，如用户点击交互式页面的叉号，或程序执行完毕调用发起系统调用正常退出，在linux中用exit，在windows中用ExitProcess）</li>
+<li>出错退出（自愿，python a.py中a.py不存在）</li>
+<li>严重错误（非自愿，执行非法指令，如引用不存在的内存，1/0等，可以捕捉异常，try…except…）</li>
+<li>被其他进程杀死（非自愿，如kill -9）</li>
+</ul>
+</li>
+</ul>
+<p>死锁与递归锁：</p>
+<blockquote>
+<p>做一个比喻，比如一户人家在装修，同时请了两个木匠，两个木匠里面A在做门，B在做床，这两个活都需要使用斧子和锤子，木匠A需要先试用斧子再使用锤子，木匠B需要先使用锤子再使用斧子，可是现在只有一个锤子和一个斧子，这两个工具现在都由户主管理。如果房主规定谁使用什么工具就过来拿，那么A先拿走了斧子，B先拿走了锤子，在B把锤子拿走后A要使用锤子，可是没有锤子就一直等着B把锤子还回来，B也一直等着A把斧子还回来，这时候就形成了死锁。如果规定必须等A使用完斧子和锤子以后B才可以使用这就是递归锁。</p>
+</blockquote>
+]]></content>
+  </entry>
+  <entry>
+    <title>副本放置综述</title>
+    <url>/2020/08/14/surveyPaper/</url>
+    <content><![CDATA[<h2 id="云计算时代的数据放置：调查，分类和开放研究问题"><a href="#云计算时代的数据放置：调查，分类和开放研究问题" class="headerlink" title="云计算时代的数据放置：调查，分类和开放研究问题"></a>云计算时代的数据放置：调查，分类和开放研究问题</h2><h3 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h3><p>​        在云计算中，数据放置是工作流管理中执行的一项关键操作，旨在找到最佳的物理机器来放置数据。它直接影响工作流程的性能，成本和执行时间。在云计算环境中设计了许多数据放置算法，旨在改善影响工作流程及其执行的各种因素，包括数据中心之间的数据移动。本文提供了对现有文献中针对云计算提出的数据放置方案的完整调查和分析。此外，它根据数据放置方案的评估能力和目标对其进行分类。比较了数据放置方案的其他目标和属性。最后，在总结性说明中提供了未来的研究方向。</p>
+<p><strong>关键词：</strong>数据放置，云计算，工作流，复制</p>
+<h3 id="1、介绍"><a href="#1、介绍" class="headerlink" title="1、介绍"></a>1、介绍</h3><p>​        随着科学工作流程中数据参与的增加，对高端计算的需求和大量存储量的增加。数据处理是一项非常复杂的任务。对于科学的工作流程，相对大量的数据将存储在不同的数据中心中[1]。随着数据的产生和互联网的发展，数据中心面临着不可预测的访问者。这导致存储容量的爆炸性增长[2]。大量的科学数据是由气象，天文学和生物信息学等各个研究领域积累的。处理海量数据并获得有价值的科学发现是一项繁琐的工作，这导致对高性能计算的需求不断增长。  [3]。这种高性能计算（也称为云计算）需要大容量存储资源。</p>
+<p>​        云计算环境中的主要过程是在数据密集型应用程序的实现和执行期间，以满足大量数据的需求并将数据存储在适当的数据中心。这种情况下需要数据放置策略[4]。数据放置包括与移动有关的所有活动，例如复制，登台，转移，空间解除分配和空间分配，注销和注册元数据，检索和定位数据。</p>
+<p>​        出现一个问题，如何在云计算上执行数据放置，如图1.1所示。</p>
+<p>​        客户端处理数据，然后将其评估并传递给服务器。服务器处理客户端的请求，这是往复操作，最终输出将存储在存储设备上。数据放置策略决定将数据存储到存储设备上。</p>
+<h4 id="1-1-云中的数据放置"><a href="#1-1-云中的数据放置" class="headerlink" title="1.1 云中的数据放置"></a>1.1 云中的数据放置</h4><p>​        在云计算时代，数据存储达到TB级，数据结构复杂多样，对服务类型和级别的要求很高，给数据管理带来了巨大压力。云系统工作在数据密集型和计算两种应用上这些在系统中同时处理并生成大量的输出/中间数据。处理数据和工作流的云架构如图1.1所示。</p>
+<p>​        云架构分为四层架构，如图1.1所示。</p>
+<ul>
+<li><strong>应用层：</strong>在这一层中，构建工作流，并通过图形和文本用户界面将需求提交给系统。云服务组件和本地资源组件的可重用性和灵活性由模块化编程提供。然后将工作流更改为预定义的数学模型。这些模型将在下一层中使用。该层为计算应用程序的结果提供了许多可视化和表示功能。</li>
+<li><strong>服务层：</strong>科学工作流程在此层中执行。为了使工作流管理系统正常运行，它处理容错和监视工作流。要求从应用层进行接收。然后，从管理层获取调度信息。将工作流的执行与任务调度和任务获取分开可以提高管理系统的可伸缩性和稳定性。</li>
+<li><strong>管理层：</strong>它是工作流执行和物理资源的桥梁。该层的主要部分是调度科学工作流程的模块，该模块确定要使用的调度算法，并且还提供了不同的调度策略。它负责优化任务程序并并行处理数据。在计划调度之前，它会获取有关系统可用服务的资源和应用程序信息。数据的移动还涉及调度过程，然后需要由高效的数据管理模块处理。</li>
+<li><strong>基础设施层：</strong>它负责扩展上述服务平台，该平台是通过基于云环境添加本地资源来设计的。如果更多地使用本地资源，则可以节省成本。每个计算环境都包括网络，存储，计算等。[5]</li>
+</ul>
+<p><img src="/2020/08/14/surveyPaper/image-20200814135226460.png" alt="image-20200814135226460"></p>
+<h4 id="1-2-数据放置的需要"><a href="#1-2-数据放置的需要" class="headerlink" title="1.2 数据放置的需要"></a>1.2 数据放置的需要</h4><ul>
+<li><strong>存储预算的管理：</strong>一些科学家在执行任务时没有考虑预算，而有些科学家则将预算视为QoS参数之一，因此，这取决于供应商之间的差异。这些类型的供应商更喜欢遵守的云服务提供商他们提供的QoS参数[6，7]。</li>
+<li><strong>有效地将数据分配到存储设备上：</strong>有多种存储设备可用，它们具有不同的参数，例如存储容量，传输速度等。因此，使数据均匀且大量地分布在这些存储设备中也是一项重要的任务[4]。</li>
+<li>数据密集型作业的数据放置是云环境中的主要挑战。不正确的数据放置策略会增加数据中心中的数据移动，从而导致成本增加和服务延迟。</li>
+<li>在复杂的科学工作流程中，运行时数据集的位置仍然是一个挑战。在传输中间数据集的某些情况下，存储和计算能力是瓶颈。</li>
+<li>据我所知，并且根据所做的文献回顾，没有放置策略考虑缓存的数据集（例如固定位置数据集），该数据集会显着影响性能。</li>
+</ul>
+<h4 id="1-3-相关调查"><a href="#1-3-相关调查" class="headerlink" title="1.3 相关调查"></a>1.3 相关调查</h4><p>​        两位研究者[8]和[9]对数据放置领域的文献进行了创造性的综述。仍然在数据放置领域中的研究持续增长。为了对数据放置领域中存在的现有研究进行整合和评估，需要对文献进行系统的调查。本文以有条理的形式提出了一项调查，以在数据放置领域的现有研究的基础上发现和评估研究挑战。</p>
+<h3 id="2-背景"><a href="#2-背景" class="headerlink" title="2. 背景"></a>2. 背景</h3><p>​        随着数据的急剧增加，商业和科学应用程序的需求预计将达到几百万兆字节。令人关注的问题是不断增加的I  /  O需求以及访问同一数据集的用户数量。在基因组学和生物医学等各个领域，越来越多的人将访问更多的数据集，大量数据的移动成为复制和处理的难题。这就带来了可靠而有效的数据放置问题。需要定位数据，将数据移动到需要的位置，复制和分段存储数据。然后在存储区和存储区进行分配和取消分配。清理所有必需的东西。由于计算和网络资源的调度和管理是一项重要任务，因此类似地调度数据放置活动也至关重要。</p>
+<h4 id="2-1-云计算简介"><a href="#2-1-云计算简介" class="headerlink" title="2.1 云计算简介"></a>2.1 云计算简介</h4><p>​        在1960年，约翰麦卡锡（John  McCarthy）设想在一定的时间内将计算作为一种实用工具。对此的认可是云计算。云计算环境的路径正由Web服务，硬件虚拟化，面向服务的体系结构和Mashups  [31]等技术奠定。</p>
+<p>​        随着硬件和互联网技术的发展，云计算已经从分布式计算的各种计算范例中出现。如今，云无缝地利用虚拟化和分发的功能，提供了在Internet上对应用程序和服务的使用，就像在本地计算机上使用它们一样。一个云计算阶段是由广泛分布的一组设备阶段组成的，该阶段被安排并运行各种软件服务[32]。</p>
+<p>​        我们大多数人都不知道云的使用，gmail中的电子邮件使用，社交网站，就像将图片上传到facebook时一样，我们使用由云提供或托管的服务。用户不需要有关后台服务的任何信息，可以同时与许多服务器进行通信，并且服务器本身之间也可以进行通信。云计算旨在向托管Internet文档的用户提供服务，以将IT基础架构外包。</p>
+<h4 id="2-2-工作流"><a href="#2-2-工作流" class="headerlink" title="2.2 工作流"></a>2.2 工作流</h4><p>​        工作流管理联盟（WfMC）将工作流定义为：业务流程的自动化，整个或部分过程是根据一组程序规则将文档，信息或任务从一个参与者传递给另一参与者以采取行动的[33]。根据WfMC的定义，工作流程是对业务流程进行有组织的演练和计算的过程，是对要在该业务流程中执行的业务的独特描述。它们被用来将一些不同的计算过程合并为一个独立的清醒过程。现在可以将业务应用程序视为复杂的工作流程，其中包括对实现目标所想出的信息进行的不同更改。工作流为从应用程序中隔离功能提供了令人感兴趣的兴趣点，并以此方式提供了根据首先安排它们，然后将它们合并。</p>
+<p>​        WfMC在识别此结构内部的接口时引入了其参考模型，该接口使项目可以在各种级别上进行交互操作。它描述了工作管理框架和系统最关键的接口（请参见图2.1）。</p>
+<ul>
+<li><strong>工作流引擎：</strong>一种软件服务，为运行时环境提供特定的最终目标，以制定，监督和执行工作流程案例</li>
+<li><strong>处理定义：</strong>指定有关流程及其相关工作流程的信息。</li>
+<li><strong>工作流互操作性：</strong>此接口使工作流的不同过程之间可以实现互操作性。</li>
+<li><strong>调用的应用程序：</strong>接口，以支持与各种IT应用程序的合作。</li>
+<li><strong>工作流客户端应用程序：</strong>用于支持与客户端接口的连接的接口。</li>
+<li><strong>管理与监控：</strong>提供接口以提供框架观察和度量能力，以鼓励综合工作流程应用程序情况的管理。</li>
+</ul>
+<p><img src="/2020/08/14/surveyPaper/image-20200814141559361.png" alt="image-20200814141559361"></p>
+<p>​       工作流程是从适合编程的想法发展而来的，其最终目标是适应不同的编程风格和复杂的Shell脚本。已经为分布式计算基础架构创建了许多工作流程框架并将其高效地发送给分布式计算基础架构，这些基础架构提供了诸如对等计算，集群计算和网格计算之类的高性能。由于包含大量计算和信息，因此需要散布图的力量才能有效地执行这些工作流程。</p>
+<p>​        工作流已在科学应用程序，复杂应用程序的分析以及类似应用程序的执行时间的优化中找到了用途。在特定情况下，研究人员可能没有早期的知识来执行和运行应用程序，或者他们没有必需的资产框架。资产的可访问性及其异质性使其变得令人困惑，并且难以由实验性应用程序处理。此类应用程序工作流需要高性能的计算基础结构来执行数据和计算密集型活动。为了适应这样的需求，购买并安装了大型，昂贵的计算基础架构。它们的集成和维护涉及巨大的成本，但是资源的可伸缩性仍然是一个更大的问题，因为在高峰时段可能无法使用资源，并且在非高峰时段也无法将其利用。</p>
+<p>​        集群和网格计算范式未涵盖此类问题，但是Clouds有效地解决了这些问题。云提供了一个资源池，该资源池可以动态扩展和管理，以提供较高的计算能力和性能。根据用户部署的应用程序，它们是根据用户的需求通过Internet提供的。</p>
+<h4 id="2-3-工作流生命周期"><a href="#2-3-工作流生命周期" class="headerlink" title="2.3 工作流生命周期"></a>2.3 工作流生命周期</h4><p>​        工作流生命周期的各个阶段是设计，分区或聚类，映射和制定，如图2.2所示。</p>
+<p>​        在工作流的设计阶段，科学或业务工作流由可执行语言设计。在创建具有目标定义的工作流的初始阶段，设计了高级工作流模型。在分散的体系结构模型中，将部署并定义集群或分区的过程。分区方法通过对诸如控制流，数据流，活动等元素进行分组来创建工作流的片段。在群集中，不同的任务在相同级别，水平级别或垂直级别上群集在一起。在映射阶段，这些群集或分区任务部署在虚拟机或工作流引擎中。工作流的制定阶段负责集群任务或分区的实现。在这项研究中，重点是工作流的映射阶段。</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200814141957871.png" alt="image-20200814141957871"></p>
+<h5 id="2-3-1-工作流程设计阶段"><a href="#2-3-1-工作流程设计阶段" class="headerlink" title="2.3.1 工作流程设计阶段"></a>2.3.1 工作流程设计阶段</h5><p>​        这是工作流生命周期的重要阶段之一。它分为工作流模型组成，应用程序类型和相互依赖性模型，如图2.3所示。</p>
+<p>​        工作流模型组成。这负责使工作流的用户提供工作流中的依赖性和步骤。工作流中的任务或作业定义为不同的步骤，这些步骤的执行顺序定义为依赖关系。工作流的模型组成可以使用基于图的建模或基于语言的建模来完成[55]。可扩展标记语言（XML）用于在基于语言的建模中表达工作流。控制流程是通过使用类似于C语言的块结构（例如while和if）来定义的，因此需要记住语言的语法。对于用户来说，使用基于语言的建模来手动表达复杂或大型的工作流程是一项繁琐的任务。</p>
+<p>​        使用活动之间的显式控制链接定义基于图的建模中的过程控制流。在此工作流中，使用一些图形元素以图形方式定义。由于图形表示更容易，因此它通常由用户使用。基于图的建模可以进一步分为无向无环图（NDAG）或有向无环图（DAG）  ）[56]。在DAG中，工作流程指定为</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200814143327443.png" alt="image-20200814143327443"></p>
+<p>是DAG中顶点指定的一组有限任务，E指定其现有边。数据和通信的依赖性由边缘表示[57]。在基于DAG的工作流程中，控制模式由初始化循环或循环的nonDAG迭代结构所补充。科学应用程序包含迭代结构，它需要任务的循环执行。有不同的工作流程模型[55]。</p>
+<p>​        工作流应用程序类型。</p>
+<ol>
+<li><p><strong>数据/计算密集型工作流程：</strong>科学工作流负责复杂科学计算的可视化，这些通常在电子科学技术和应用中使用。分散环境中的科学工作流程中涉及各种计算资源，这些资源用于生物信息学，天文学等各个领域。[58]</p>
+</li>
+<li><p><strong>实例密集型业务工作流：</strong>工作流模型也应用于业务中。业务工作流由组织的日常业务中发生的文档化流程组成。在进一步详细介绍电子商务和电子科学应用程序之后，引入了一个新的工作流程，即实例密集型工作流程。例如，电子商务是实例密集型工作流的示例之一[59]。工作流的实例需要并行执行[61]。电子商务的各种示例包括保险索赔，银行支票等。[60]</p>
+<p>密集型工作流的基础是数据或计算密集型工作流，例如科学的天气预报工作流可用作商业天气预报产品。</p>
+</li>
+</ol>
+<p>​       相互依赖模型。存在于工作流分区中的依存关系的类型定义为相互依存关系。数据依赖关系和控件依赖关系都用于定义不同类型的依赖关系。任务或分区之间的控件传递是通过适用于控制结构（如条件，循环和序列）的链接定义的。数据流或依赖项支持数据密集型应用程序。任务之间的数据传输由数据相关性指定。混合模型结合了数据和控件依赖性，可以更好地管理工作流模型[62]。</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200814143742114.png" alt="image-20200814143742114"></p>
+<h5 id="2-3-2-工作流分区。"><a href="#2-3-2-工作流分区。" class="headerlink" title="2.3.2 工作流分区。"></a>2.3.2 工作流分区。</h5><p>​        在工作流程的生命周期中设计了工作流程之后，然后将工作流程分区或聚集为多个分区。这些群集或分配的任务将进一步发送到工作流的映射阶段</p>
+<h5 id="2-3-3-工作流映射"><a href="#2-3-3-工作流映射" class="headerlink" title="2.3.3 工作流映射"></a>2.3.3 工作流映射</h5><p>​        工作流映射负责创建工作流的可执行实例，该实例使用合适的资源，如图2.4所示。工作流中的资源定义为可以执行任务或工作流片段的代理/服务/计算机/人员。</p>
+<p>​        工作流的映射可以由用户手动执行，也可以由工作流系统自动执行。在用户完成的映射中，每个分区都分配给一个执行引擎。Kepler和Taverna工作流系统是此类映射的示例。映射是使用内部调度程序将可用资源分配给分区/任务。采用这种类型的映射的工作流程系统是Triana ,Karajan and Pegasus 。Triana使用网格应用程序工具包（GAT）在运行时选择资源[65]。这项研究的重点是数据放置，因此将对其进行更详细的描述。</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200814162006209.png" alt="image-20200814162006209"></p>
+<h5 id="2-3-4-工作流程制定"><a href="#2-3-4-工作流程制定" class="headerlink" title="2.3.4 工作流程制定"></a>2.3.4 工作流程制定</h5><p>​        在这个阶段，碎片或分区在Grid或Cloud环境中制定，如图6所示。它被描述为负责执行和管理工作流的服务，还维护执行工作流所需的资源和管理工具之间的协调[33]。工作流引擎是一种为工作流实例提供可执行环境的软件服务。工作流制定又分为两类：业务工作流引擎和科学工作流引擎，如图2.5所示。</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200814162016653.png" alt="image-20200814162016653"></p>
+<p>​        云计算的出现引入了经济特定的按使用付费模式。云是平台，服务和硬件等虚拟资源的最大集合，使工作流管理更便宜，更便捷，更快捷。存在多种工作流执行引擎。业务工作流领域中使用的制定引擎是NINOS  [66]，SwinDeW-C（云的Swinburne分散式工作流）[61]等，而科学工作流的工作流引擎是Kepler，Taverna等。</p>
+<h4 id="2-4-数据放置过程"><a href="#2-4-数据放置过程" class="headerlink" title="2.4 数据放置过程"></a>2.4 数据放置过程</h4><p>​        在计算系统中，数据放置过程定义为将数据密集型应用程序的输入数据从远程站点移动到执行站点，然后将输出数据从执行位置移动到另一个远程站点或同一站点。在执行站点上，需要在作业完成后分配空间和取消分配空间。</p>
+<p>​        数据放置步骤以DAG（有向无环图）表示，它们之间的依赖性由弧表示。数据放置的步骤如图2.6所示。</p>
+<h5 id="2-4-1-数据放置阶段"><a href="#2-4-1-数据放置阶段" class="headerlink" title="2.4.1 数据放置阶段"></a>2.4.1 数据放置阶段</h5><ul>
+<li>Stage-in :此数据放置阶段也称为构建时数据放置，这涉及获取数据集的来源信息并在将数据上传到适当的数据中心之前预先对相似的数据项进行聚类。</li>
+<li>Stage-out:：此数据放置阶段也称为运行时数据放置。在工作流执行期间会生成中间数据。此数据可能是后续任务的输入，因此放置和管理此类数据同样是一项复杂的任务。 [13]</li>
+</ul>
+<p><img src="/2020/08/14/surveyPaper/image-20200814162613743.png" alt="image-20200814162613743"></p>
+<h3 id="3-数据放置算法"><a href="#3-数据放置算法" class="headerlink" title="3. 数据放置算法"></a>3. 数据放置算法</h3><p>数据放置算法分为不同的算法类别，如图3.1所示。</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200815092013051.png" alt="image-20200815092013051"></p>
+<h4 id="3-1-基于相关的数据放置"><a href="#3-1-基于相关的数据放置" class="headerlink" title="3.1 基于相关的数据放置"></a>3.1 基于相关的数据放置</h4><p>​        数据放置调度程序Stork提供了对数据放置作业进行排队，调度，管理和监视的功能。它还应用了检查点作业的技术。这种方法为处理数据提供了完全的自动化方法。所提出的系统可以在异构系统之间实现全自动的数据传输自动化。它具有从网络，软件和存储系统故障中恢复的能力，而无需人工干预。它可以在执行时动态地将数据放置作业适应系统环境[34]。</p>
+<p>​        作者提出了一种在科学网格中管理数据的文件库分组技术，同时节省了根据大小来定位数据和对文件进行分组的时间。此外，还提出了一种LRU捆绑的文件分段算法[35]。  [36]引入了BitDew编程接口，用于数据管理操作，如复制，放置和容错。该体系结构依赖于独立的服务来传输，存储和调度数据</p>
+<p>​        在[29]中，研究人员提出了一种用于运行时以及构建时阶段的算法。在初始阶段，计算所有数据集之间的依赖关系，并建立依赖关系矩阵。对于数据集的分区和聚类，BEA（Bond  energy）这些分区在不同数据中心之间共享。这些数据中心使用k均值算法进行分区。生成中间数据后，新提出的聚类算法处理新数据集。判断每个数据中心的依赖性并然后掩盖了数据移动和收集的因素。提出了两种算法，分别是：</p>
+<ol>
+<li><p>Build-Time阶段算法：</p>
+<p>在此阶段，计算任务之间的依赖关系，并建立依赖关系矩阵。将依赖关系矩阵转换为聚类依赖关系矩阵，使用BEA。定义聚类依赖关系矩阵的全局度量（GM）：</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200814163547544.png" alt="image-20200814163547544"></p>
+<p>然后，使用二进制分配算法将进一步分配的数据集映射到数据中心，具体方法如下：</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200814163704247.png" alt="image-20200814163704247"></p>
+<p>此过程递归地继续。</p>
+</li>
+<li><p>Run-Time阶段算法：</p>
+<p>在这个阶段，使用K均值算法根据新生成的数据集之间的依赖关系将其聚类到数据中心，计算出所有数据中心与所有数据中心之间的依赖关系，最后根据对数据中心。</p>
+</li>
+</ol>
+<p>在[9]中，作者提出了DCCP（动态计算相关放置）作为一种基于动态计算相关的数据放置技术。具有高动态相关性的数据集放置在同一数据中心。考虑的因素是容量负载和输入输出负载。数据中心。在执行计算期间，处理的数据集存储在本地数据中心上，从而减少了执行时间。这导致输入/输出和统计负载平衡</p>
+<h4 id="3-2-基于遗传算法的数据放置。"><a href="#3-2-基于遗传算法的数据放置。" class="headerlink" title="3.2 基于遗传算法的数据放置。"></a>3.2 基于遗传算法的数据放置。</h4><p>在[30]中，作者提出了减少数据中心之间的数据移动从而导致数据中心负载平衡的算法。启发式算法和遗传算法相结合，以提高本地搜索的能力并减少搜索时间。基因操作和初始种群选择。将应用整数编码规则并且放置过程由一个基因代表。不能在数据中心编码的无效基因片段由编码规则决定。健身函数描述了遗传个体的优缺点，描述了数据集之间的依赖程度和中心的负载平衡，Ddc是数据中心的总程度。数据中心dc中的数据依存关系，定义为：</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200814164302469.png" alt="image-20200814164302469"></p>
+<p>适应度函数定义为：</p>
+<p><img src="/2020/08/14/surveyPaper/image-20200814164312791.png" alt="image-20200814164312791"></p>
+<p>其中DCu是数据中心集至少包含一个数据集。值越大，表示基因越好。数据中心的超载是通过非正常染色体来调节的。如果发现该基因无效，则是指数据中心的超载。因此，应忽略此基因。如果在初始阶段描述了无效性，则新基因应如果发生在交叉阶段，则需要重新杂交基因;如果发生在突变阶段，则需要重新突变基因。对基因进行优化以减少数据移动。如果数据集是固定位置数据集合然后根据公式计算每个数据集对数据中心的依赖性。如果数据集的大小更大，则数据中心的存储容量会将数据集移至下一个数据中心。</p>
+<h2 id="5-结论和未来方向。"><a href="#5-结论和未来方向。" class="headerlink" title="5. 结论和未来方向。"></a>5. 结论和未来方向。</h2><p>​        云计算是一个新兴的计算平台，针对科学工作流应用中产生的大量数据提供了不同的方案。数据放置是使云计算成为可能的必要方案之一。数据的持久放置问题已成为云计算领域的热门话题。云计算同时考虑科学的工作流程应用程序，因为它可以大大减少工作流程的执行时间并提高数据中心的效率。</p>
+<p>​        本文针对云计算提出的数据放置方案进行了全面的调查和分析，为此，首先提供了数据放置方案的定义，然后根据放置类型对数据放置方案进行了分类。描述了各种建议的数据放置方案，并研究了每种方案中数据放置的因素，以详细阐明每种放置方案的优点，局限性和特性。此外，对数据放置方案进行了完整的比较比较，突出了将来研究和研究中应考虑的项目。如这些比较中所指定的那样，大多数数据放置方案旨在改善数据中心中与性能和执行相关的问题。很少关注数据放置中与安全相关的问题。但是随着对云服务的安全攻击不断增加，提供了安全性在云环境中已成为关键问题。因此，安全性是未来数据放置中应考虑的关键问题之一。</p>
+<p>​    根据文献调查，在云中的数据放置方面还有进一步改进的范围。以下部分介绍了该领域的进一步改进。</p>
+<pre><code>1. 为了改善数据中心之间的流量，可以识别附近的站点，从而改善延迟和成本。可以提供数据中心的位置作为输入。将来可以考虑更多的放置因素，例如每台服务器的计算能力复制使用的数据还可以提高系统响应时间和性能可靠性。
+ 2. 数据集有两种类型：固定位置数据集和可变位置数据集。固定位置数据集是位于云环境中预定位置的数据集，并且不可转移，而可变位置数据集可以从一个位置移动到另一位置。有一些作品列出了可变位置数据集的使用，但是为了增强固定位置数据集，也可以考虑进一步改善成本，价格等。
+ 3. 通过详细描述任务的特征还可以进一步提高云的系统性能，这些特征可以进一步用于改进异构环境中的调度机制。可以根据任务的特征来实施其他策略，并且具有不同策略方案的系统可以被实施。
+ 4. 可以分析工作流程的成本和能耗。需要进一步研究以最小化功耗，这将改善科学工作流程的性能。可以通过考虑能耗/来探索数据放置功率效率和功率/性能折衷。
+ 5. 将来可以考虑更多的放置因素，例如每台服务器的计算能力和负载平衡。复制使用的数据还可以在系统可靠性和响应时间方面获得更好的性能。
+ 6. 遗传选择的不同方法会影响算法的性能，需要进一步研究。未概述模糊策略。最适合整个算法的粒度方法可以确定每个最终的子工作负载的负载和最佳存储位置。</code></pre>]]></content>
+      <tags>
+        <tag>副本放置</tag>
+        <tag>云计算</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>microService</title>
+    <url>/2020/08/14/microService/</url>
+    <content><![CDATA[<h2 id="1-什么是微服务"><a href="#1-什么是微服务" class="headerlink" title="1.什么是微服务"></a>1.什么是微服务</h2><p>微服务的微不光体现系统的小还表示不重要。</p>
+<p><img src="/2020/08/14/microService/image-20200814090859012.png" alt="image-20200814090859012"></p>
+<blockquote>
+<p>分布式表示没台机器干的不一样的服务</p>
+<p>集群表示所有机器干的一样的服务</p>
+</blockquote>
+]]></content>
+      <tags>
+        <tag>学习</tag>
+        <tag>微服务</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mapredurce-1</title>
+    <url>/2020/08/13/mapredurce-1/</url>
+    <content><![CDATA[<h2 id="MapReduce"><a href="#MapReduce" class="headerlink" title="MapReduce"></a>MapReduce</h2><h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p>map：以一条记录为单位做映射。只能是一条条数据传输过来做处理。</p>
+<ul>
+<li>映射、变换、过滤</li>
+<li>1进N出</li>
+</ul>
+<p>Reduce：以一组数据为单位做计算。</p>
+<ul>
+<li>分解、缩小、归纳</li>
+<li>一组进N出</li>
+</ul>
+<blockquote>
+<p><strong>什么叫做一组?</strong></p>
+<p>分组依赖一种数据格式：键值对（key:value）</p>
+<p>键值对的实现：由map映射实现</p>
+<p><img src="/2020/08/13/mapredurce-1/image-20200813165558546.png" alt="image-20200813165558546"></p>
+</blockquote>
+<h3 id="mapreduce框架"><a href="#mapreduce框架" class="headerlink" title="mapreduce框架"></a>mapreduce框架</h3><p><img src="/2020/08/13/mapredurce-1/image-20200813223954447.png" alt="image-20200813223954447"></p>
+<p>reduce的计算来自于map的输出</p>
+<blockquote>
+<p><strong>其实每一个切片(split)就是相当于hdfs系统中每一个block的概念，就是对文件的一部分数据就行处理，那么既然这样为什么不直接使用hdfs中的块进行map计算，还要引入一个切片的概念？</strong></p>
+<p>计算分为两大类：</p>
+<ol>
+<li>cpu密集型计算：就是比如读取文件中的一行进行计算就要计算一个小时</li>
+<li>I/O密集型计算：更多的计算时间是用在读取文件上</li>
+</ol>
+<p>切片是为了满足不同项目组不同类型的计算，有的需要进行cpu密集型计算就需要每个文件片小一点，I/O密集型就需要文件块大一点不需要经常读取。所以每个切片的大小就会分为山中情况：</p>
+<ol>
+<li>切片文件大小&lt;HDFS块的大小</li>
+<li>切片文件大小=HDFS块的大小</li>
+<li>切片文件大小&gt;HDFS块的大小</li>
+</ol>
+<p>针对不同的需求使用不同的切片方案。</p>
+<p>注意：每个切片的大小相同</p>
+</blockquote>
+<p>map的并行度是由切片的多少决定的。</p>
+<p>reduce的并行度由人来决定</p>
+<p>各种数据间的比例关系：</p>
+<ul>
+<li>block和split的关系<ul>
+<li>1：1   默认模式，把每块都放到一个切片里面处理 </li>
+<li>N：1  把多个块放到一个切片中处理</li>
+<li>1：N  把一个块放到多个切片中处理</li>
+</ul>
+</li>
+<li>split和map的关系<ul>
+<li>1：1  一个切断对应一个map任务</li>
+</ul>
+</li>
+<li>map和reduce的关系<ul>
+<li>N：1  默认</li>
+<li>N：N</li>
+<li>1：1</li>
+<li>1：N</li>
+</ul>
+</li>
+<li>组和分区（reduce任务）的关系<ul>
+<li>1：1  把一个组放在一个分区内执行</li>
+<li>N：1  把多个分区放在一个分区内执行</li>
+<li>N：N   把多个分区分别放在多个分区执行</li>
+<li>注意：一个组绝对不可以放在多个分区内执行，每个分区处理数据时必须处理一组数据</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>迭代器：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 迭代器就是迭代的取数据，每次取一部分数据</span></span><br><span class="line">li = [<span class="number">5</span>,<span class="number">6</span>,<span class="number">7</span>]</span><br><span class="line"><span class="comment"># 生成一个迭代器it</span></span><br><span class="line">it = iter(li)</span><br><span class="line">print(type(it))</span><br><span class="line"><span class="comment"># 分别输出迭代器中的元素</span></span><br><span class="line">print(it.__next__())</span><br><span class="line">print(next(it))</span><br><span class="line">print(it.__next__())</span><br><span class="line"><span class="comment"># 输出：</span></span><br><span class="line"><span class="comment"># &lt;class 'list_iterator'&gt;</span></span><br><span class="line"><span class="comment"># 5</span></span><br><span class="line"><span class="comment"># 6</span></span><br><span class="line"><span class="comment"># 7</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 迭代器可以使用类生成</span></span><br><span class="line"><span class="comment"># 自定义迭代器</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyRange</span><span class="params">(object)</span>:</span></span><br><span class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self,n)</span>:</span></span><br><span class="line">		self.idx = <span class="number">0</span></span><br><span class="line">		self.n = n</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__iter__</span><span class="params">(self)</span>:</span></span><br><span class="line">		<span class="keyword">return</span> self</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">def</span> <span class="title">__next__</span><span class="params">(self)</span>:</span></span><br><span class="line">		<span class="keyword">if</span> self.idx &lt; self.n:</span><br><span class="line">			val = self.idx</span><br><span class="line">			self.idx += <span class="number">1</span></span><br><span class="line">			<span class="keyword">return</span> val</span><br><span class="line">		<span class="keyword">else</span>:</span><br><span class="line">			<span class="comment"># 抛出异常</span></span><br><span class="line">			<span class="keyword">raise</span> StopIteration()</span><br><span class="line">range = MyRange(<span class="number">2</span>)</span><br><span class="line">print(next(range))</span><br><span class="line">print(next(range))</span><br><span class="line">print(next(range))</span><br><span class="line"><span class="comment"># 输出</span></span><br><span class="line"><span class="comment"># 0</span></span><br><span class="line"><span class="comment"># 1</span></span><br><span class="line"><span class="comment">#   File "C:\Users\Administrator\迭代器.py", line 35, in &lt;module&gt;</span></span><br><span class="line"><span class="comment">#     print(next(range))</span></span><br><span class="line"><span class="comment">#   File "C:\Users\Administrator\迭代器.py", line 31, in __next__</span></span><br><span class="line"><span class="comment">#     raise StopIteration()</span></span><br><span class="line"><span class="comment"># StopIteration</span></span><br></pre></td></tr></table></figure>
+
+<p>生成器</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># 生成器是一种特殊的迭代器，可以通过定义生成器函数的方式产生，但是不需要用return返回数据，需要使用yield一次返回一个结果</span><br><span class="line"># 就是每次用到什么数据就生成什么数据</span><br><span class="line">g &#x3D; (x*x for x in range(10))</span><br><span class="line">print(g)</span><br><span class="line">print(next(g))</span><br><span class="line">print(next(g))</span><br><span class="line">print(next(g))</span><br><span class="line">print(next(g))</span><br><span class="line">print(next(g))</span><br><span class="line"># 输出：</span><br><span class="line"># &lt;generator object &lt;genexpr&gt; at 0x00000000027C9C48&gt;</span><br><span class="line"># 0</span><br><span class="line"># 1</span><br><span class="line"># 4</span><br><span class="line"># 9</span><br><span class="line"># 16</span><br><span class="line"></span><br><span class="line"># 通过函数定义</span><br><span class="line">def odd():</span><br><span class="line">	print(&quot;one&quot;)</span><br><span class="line">	yield 1</span><br><span class="line">	print(&quot;two&quot;)</span><br><span class="line">	yield 2</span><br><span class="line">	print(&quot;three&quot;)</span><br><span class="line">	yield 3</span><br><span class="line">o &#x3D; odd()</span><br><span class="line">print(next(o))</span><br><span class="line">print(next(o))</span><br><span class="line">print(next(o))</span><br><span class="line"># 输出：</span><br><span class="line"># one</span><br><span class="line"># 1</span><br><span class="line"># two</span><br><span class="line"># 2</span><br><span class="line"># three</span><br><span class="line"># 3</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="详细介绍mapreduce流程："><a href="#详细介绍mapreduce流程：" class="headerlink" title="详细介绍mapreduce流程："></a>详细介绍mapreduce流程：</h3><p><img src="/2020/08/13/mapredurce-1/image-20200821093414542.png" alt="image-20200821093414542"></p>
+<p>具体介绍map和reduce的工作流程</p>
+<ol>
+<li><p>首先把数据传输到切片当中，切片会对数据进行格式化，格式化的结果是一个个的记录，然后再以记录为单位调用map方法。</p>
+</li>
+<li><p>map进行计算，把map的输出映射成KV对（key，value｝）。</p>
+</li>
+<li><p>在输出kv对后，kv对会参与一次分区计算，拿着K计算出分区号P，形成kvp形式。</p>
+<blockquote>
+<p>其实此时就已经计算出的内容就是map task的输出文件的内容，可是存在一个问题，那就是如果map计算的记录数过多时，每计算一次map就要往输出文件中写入一次这样造成的I/O开销过大，所以此处用到一个带缓存的I/O技术，就是buffer。</p>
+</blockquote>
+</li>
+<li><p>map计算出来的结果先存入缓存buffer中，当缓存满了以后再一次性的写入输出文件。</p>
+<blockquote>
+<p>在内存缓冲区溢写磁盘时需要进行两次排序，首先是通过p值对分区进行排序，然后再对每一个分区中的数据根据key值进行排序。因为每次输出的记录间是内部有序外部无序的所以在写入文件时需要通过归并排序的方法进行排序写入。最终的输出文件是一个全排序的文件。</p>
+</blockquote>
+</li>
+<li><p>reduce模块在map的输出文件中按分区号进行取数据到自己的分区中进行计算。</p>
+</li>
+<li><p>reduce每个分区取得所有map中的输出结果，整个文件的所有数据都分布在这些文件中，而在reduce计算时需要把同一组的数据同时传入reduce进行计算。所以就要再对文件进行整理后再传入reduce进行计算，这些输出结果都是全排序的，而各个文件之间是内部有序外部无序的，所以需要再进行一次归并排序。当把所有数据都排序好以后就只需打开一次文件，然后按组传给reduce计算，把所有数据都计算完成后在关闭文件，这样就可以大大减少读取IO的开销。</p>
+</li>
+<li><p>在实际的操作过程中其实不需要对所有map输出文件同时进行归并排序，可以分两组进行排序然后把排序的结果再进行一次排序，如图所示的在最后一次归并排序时并没有生成一个文件再进行计算，那是因为reduce可以直接计算两个文件的归并结果然后直接在reduce中进行计算，这样就少了一次读取IO的开销。</p>
+<blockquote>
+<p>迭代器模式是批量计算中非常优美的实现形式</p>
+</blockquote>
+</li>
+</ol>
+<h3 id="具体举例"><a href="#具体举例" class="headerlink" title="具体举例"></a>具体举例</h3><ol>
+<li><p>查找文件中的重复行</p>
+<p><img src="/2020/08/13/mapredurce-1/image-20200821111537603.png" alt="image-20200821111537603"></p>
+</li>
+<li><p>World count 计算文件中world的数量</p>
+<p><img src="/2020/08/13/mapredurce-1/image-20200821111711091.png" alt="image-20200821111711091"></p>
+</li>
+<li><p>计算文件中各词频的单词数量（例子2的输出作为此次mp的输入）</p>
+<p><img src="/2020/08/13/mapredurce-1/image-20200821111738563.png" alt="image-20200821111738563"></p>
+</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>Untitled</title>
+    <url>/2020/08/11/Untitled/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>hdfs-HA</title>
+    <url>/2020/08/08/hdfs-HA/</url>
+    <content><![CDATA[<h2 id="hdfs-ha"><a href="#hdfs-ha" class="headerlink" title="hdfs-ha"></a>hdfs-ha</h2><h3 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h3><p>主从集群：结构相对简单、主与从协作</p>
+<ul>
+<li>主：单点，数据一致好掌握</li>
+<li>问题：<ul>
+<li>单点故障、集群整体不可用</li>
+<li>压力过大、内存受限</li>
+</ul>
+</li>
+<li>解决方案:<ul>
+<li>单点故障：<ul>
+<li>高可用方案：HA</li>
+<li>多个NN，主备切换</li>
+</ul>
+</li>
+<li>压力过大，内存受限：<ul>
+<li>联邦机制：Federation（元数据切片）</li>
+<li>多个NN，管理不同的元数据</li>
+</ul>
+</li>
+<li>HADOOP 2.X 只支持一主一备</li>
+</ul>
+</li>
+</ul>
+<h3 id="HDFS-HA解决方案："><a href="#HDFS-HA解决方案：" class="headerlink" title="HDFS-HA解决方案："></a>HDFS-HA解决方案：</h3><p><img src="/2020/08/08/hdfs-HA/image-20200807111805272.png" alt="image-20200807111805272"></p>
+<p>根据图中可以看到有两个NN节点，一主一备，现在想要主NN发生故障可以立即切换至备NN。</p>
+<p>在hdfs2.x中一主一备，3.x一主多备，最多五个服务器，一般是用三个。</p>
+<blockquote>
+<p>NameNode中的元数据：</p>
+<ol>
+<li>客户端交互产生的数据  比如mkdir /a命令</li>
+<li>datanode提交的block</li>
+</ol>
+</blockquote>
+<p>数据一致性问题：</p>
+<ul>
+<li><p>nn中有两种数据需要同步，其中DN提交数据时是同时向两个NN提交的，所以不需要其他同步措施。</p>
+</li>
+<li><p>针对客户端产生的数据</p>
+<ul>
+<li><p>CAP原则：</p>
+<ul>
+<li>Consistency：一致性</li>
+<li>Availability：可用性</li>
+<li>Partition tolerance：分区容忍性（多个区之间通信可能会失败）</li>
+<li>这三个原则不可能同时实现</li>
+<li><img src="/2020/08/08/hdfs-HA/image-20200807113312296.png" alt="image-20200807113312296"></li>
+<li>CA：关系数据库（单机）</li>
+<li>CP：MangoDB，HBase，Redis<ul>
+<li>比如有两个数据A、B存在不同的机器，如果操作A就对A进行修改就和B没有关系，就可以满足CP，但是并不满足好可用性，就比如其中一个数据的机器坏掉了就没有办法再访问该数据了。</li>
+</ul>
+</li>
+<li>AP：</li>
+<li>所以在分布式中强一致性破坏可用性</li>
+</ul>
+</li>
+<li><p>强一致性和弱一致性的访问流程</p>
+<ul>
+<li>强一致性<ul>
+<li>客户端访问主节点产生交互数据，主节点访问从节点对产生的数据进行备份，等从节点返回数据存储成功后主节点再向客户端返回存储成功的状态。</li>
+<li>这种方式的缺点就是如果从节点死机则主节点接受不到备份成功的信号就无法返回状态给客户端。</li>
+</ul>
+</li>
+<li>弱一致性<ul>
+<li>客户端访问主节点产生交互数据，主节点访问从节点对产生的数据进行备份，不等从节点返回成功主节点就返回客户端存储成功的状态，等从节点存储成功后再异步的把成功消息传给主机。</li>
+<li>这种方式的缺点就是并不能保证每条数据都一致性保存，如果从主机死机也不知道。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Paxos算法在此处的应用</p>
+<ul>
+<li><p>最基本的思想是在主从节点之间增加一个比较可靠的节点进行中间存储，主节点和这个中间节点保持强一致性，中间节点和从节点使用异步通信。这时候问题出现了，怎么保证中间节点是可靠的不会发生死机呢，那么使用的方法就是把中间的节点换成一个集群，在这个集群中选择一个节点与主节点进行通讯，主节点把数据传给它以后，它在集群中对数据进行一致性保存，当保存的数据的机器数量超过集群机器的一半的时候就返回主节点成功，主节点再返回客户端。</p>
+</li>
+<li><p>然后从节点再异步的在集群中获取数据，找集群中数据最多的点就是最新的数据（访问一半+1个节点的数据就能找到最多的）</p>
+<p><img src="/2020/08/08/hdfs-HA/image-20200807182021863.png" alt="image-20200807182021863"></p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="/2020/08/08/hdfs-HA/image-20200807183426403.png" alt="image-20200807183426403"></p>
+<ul>
+<li><p>ZK的几个特征</p>
+<pre><code>- 有目录树结构：x节点进行抢锁，谁抢到锁谁是主节点</code></pre><ul>
+<li>事件机制-》call back(回调)，随着时间推移，假设NNActive挂掉，那么ZKFC将会把锁删除，锁删除就会触发一个回调事件，另一个ZKFC进行新一轮抢锁，把自己生成active。<pre><code>- 回调方式的优势：在锁被删除时候立即回调实时性比较好，而如果ZJFC每隔一段时间查询一下锁是否被删除会有时间间隔。</code></pre><ul>
+<li>临时节点</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>FCA有三只手</p>
+<pre><code>            - 第一只手：实时监控namenode是不是还在运行（健康检查）
+     - 第二只手：连接zookeeper
+- 第三只手：在active挂掉时，原本的从节点通过抢锁变成新的active，这时FCA在连接节点前会先连接原本的主节点看它是否真的挂掉了。</code></pre><blockquote>
+<p>整理一下：namenode active挂掉以后切换节点的流程：</p>
+<ol>
+<li>ZKFC检测到NNactive挂掉以后会删除在ZK中创建的锁</li>
+<li>锁被删除后会触发原本存在锁中的另一个节点ZKFC的回调函数</li>
+<li>回调函数进行新一轮的抢锁（毫无疑问是可以抢到的）</li>
+<li>抢锁成功后先连接原本的active节点确定一下该节点是不是真的挂掉了</li>
+<li>如果真的挂掉了再连接节点</li>
+<li>如果没有挂掉那说明可能是原节点的zkfc挂掉了，这时就把原主节点变成从节点</li>
+</ol>
+<p><img src="/2020/08/08/hdfs-HA/image-20200807194156813.png" alt="image-20200807194156813"></p>
+</blockquote>
+<blockquote>
+<p>描述一种极端情况：</p>
+<p> NNACTIVE和它的ZKFC都没有出现问题，除了和ZK集群不能通信其余都没有问题。这时候ZK的锁消失了，抢到锁的ZKFC去确定原来的ACTIVE是否真的挂掉时并不能连接成功，这时候这个ZKFC就会不知道怎么办，因为它也不确定原来的active是不是真的挂掉，就不敢让它的节点变成ACTIVE。</p>
+<p>解决方法：</p>
+<p>所有机器都连一个串口接到对方电源，如果出现上述情况直接把对方电源关了，就可以放心的把自己设成ACTIVE了。</p>
+</blockquote>
+<p>总结HA方案：</p>
+<p>在HA模式中没有SNN，standbyNN完成了SNN的功能，SNN是在非HA模式下</p>
+<p><img src="/2020/08/08/hdfs-HA/image-20200807195707983.png" alt="image-20200807195707983"></p>
+</li>
+</ul>
+<h3 id="解决压力过大，内存受限的问题-–-HDFS-Federation"><a href="#解决压力过大，内存受限的问题-–-HDFS-Federation" class="headerlink" title="解决压力过大，内存受限的问题 – HDFS-Federation"></a>解决压力过大，内存受限的问题 – HDFS-Federation</h3><p>元数据分治复用DN存储</p>
+<p>元数据访问隔离性</p>
+<p>DN目录block隔离性 </p>
+<h2 id="HA操作"><a href="#HA操作" class="headerlink" title="HA操作"></a>HA操作</h2><p>HA模式下：有一个问题，你的NN有两台，在某一时刻。谁是active？client是怎么连接active</p>
+<p>规划：</p>
+<table>
+<thead>
+<tr>
+<th>HOST</th>
+<th>NN</th>
+<th>NN</th>
+<th>JNN（8485）</th>
+<th>DN</th>
+<th>ZKFC</th>
+<th>ZK</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>node01</td>
+<td></td>
+<td>√</td>
+<td></td>
+<td>√</td>
+<td>√</td>
+<td>√</td>
+</tr>
+<tr>
+<td>node02</td>
+<td>√</td>
+<td></td>
+<td>√</td>
+<td></td>
+<td>√</td>
+<td></td>
+</tr>
+<tr>
+<td>node03</td>
+<td></td>
+<td></td>
+<td>√</td>
+<td>√</td>
+<td></td>
+<td>√</td>
+</tr>
+</tbody></table>
+<h3 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h3><ol>
+<li>基础设施<ul>
+<li>使用ssh免密的两种情况<ul>
+<li>启动start-dfs.sh脚本需要将公钥分发给别的节点</li>
+<li>HA模式下，每一个NN身边会启动ZKFC，ZKFS会用免密的方式控制自己和其他NN节点的NN状态</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>应用搭建<ul>
+<li>HA依赖ZK，搭建zk集群</li>
+<li>修改hadoop配置文件，并进行同步</li>
+</ul>
+</li>
+<li>初始化应用<ul>
+<li>先启动JN：hadoop-daemon.sh start journalnode</li>
+<li>选择一个NN做格式化：hdfs namenode -format  (只有第一次搭建做，以后不用做)</li>
+<li>启动这个格式化的NN，以备另外一台同步：hadoop-daemon.sh start namenode</li>
+<li>在另外一台机器中：hdfs namenode -bootstrapStandby</li>
+<li>格式化zk：hdfs zkfs -formatZK (只有第一次搭建做，以后不用做)</li>
+<li>start-dfs.sh</li>
+</ul>
+</li>
+<li>使用</li>
+</ol>
+<h3 id="实操"><a href="#实操" class="headerlink" title="实操"></a>实操</h3><ol>
+<li><p>停止之前的集群</p>
+<ul>
+<li>stop-dfs.sh</li>
+</ul>
+</li>
+<li><p>免密</p>
+<p>所有的NN节点都需要可以免密登录其他节点</p>
+<ul>
+<li>创建公钥、秘钥<ul>
+<li>ssh-keygen -t dsa -P ‘’ -f ./id_dsa</li>
+<li><img src="/2020/08/08/hdfs-HA/image-20200813120715149.png" alt="image-20200813120715149"></li>
+</ul>
+</li>
+<li>把公钥分发<ul>
+<li>对node01进行免密设置<ul>
+<li>设置本机免密<ul>
+<li>cat id_dsa.pub &gt;&gt; authorized_keys</li>
+</ul>
+</li>
+<li>分发公钥<ul>
+<li>scp ./id_dsa.pub node02:·pwd·/node01.pub</li>
+</ul>
+</li>
+<li>在node02中进行设置公钥<ul>
+<li>cd .ssh/</li>
+<li>cat node01.pub &gt;&gt; authorized_keys </li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li></li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>hdfs-exec</title>
+    <url>/2020/08/04/hdfs-exec/</url>
+    <content><![CDATA[<h2 id="HDFS操作"><a href="#HDFS操作" class="headerlink" title="HDFS操作"></a>HDFS操作</h2><blockquote>
+<p>ssh远程操作时不会获取服务器的环境变量文件</p>
+<p>vi  /etc/profile</p>
+<p>​        文件最后追加下面的一行</p>
+<p>​        export  环境变量名=环境变量值</p>
+<p>使用soource /etc/profile</p>
+</blockquote>
+<h3 id="基础设施"><a href="#基础设施" class="headerlink" title="基础设施"></a>基础设施</h3><ol>
+<li><p>设置ip和主机名</p>
+<ul>
+<li>设置ip</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vi &#x2F;etc&#x2F;sysconfig&#x2F;network-scripts&#x2F;ifcfg-ens33</span><br></pre></td></tr></table></figure>
+
+<p>修改文件内容</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">TYPE&#x3D;Ethernet</span><br><span class="line">PROXY_METHOD&#x3D;none</span><br><span class="line">BROWSER_ONLY&#x3D;no</span><br><span class="line">BOOTPROTO&#x3D;dhcp</span><br><span class="line">DEFROUTE&#x3D;yes</span><br><span class="line">IPV4_FAILURE_FATAL&#x3D;no</span><br><span class="line">IPV6INIT&#x3D;yes</span><br><span class="line">IPV6_AUTOCONF&#x3D;yes</span><br><span class="line">IPV6_DEFROUTE&#x3D;yes</span><br><span class="line">IPV6_FAILURE_FATAL&#x3D;no</span><br><span class="line">IPV6_ADDR_GEN_MODE&#x3D;stable-privacy</span><br><span class="line">NAME&#x3D;ens33</span><br><span class="line">UUID&#x3D;b14f0edf-97b1-486b-be96-f7876dd93aa3</span><br><span class="line">DEVICE&#x3D;ens33</span><br><span class="line">GATEWAY&#x3D;192.168.66.2</span><br><span class="line">NETMASK&#x3D;255.255.255.0</span><br><span class="line">DNS1&#x3D;114.114.114.114</span><br><span class="line">ONBOOT&#x3D;yes</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>设置主机名</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vi &#x2F;etc&#x2F;sysconfig&#x2F;network</span><br></pre></td></tr></table></figure>
+
+<p>创建文件内容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">NETWORKING&#x3D;yes</span><br><span class="line">HOSTNAME&#x3D;node02</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>关闭防火墙和selinux</p>
+<ul>
+<li>关闭防火墙</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo systemctl stop firewalld</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>设置防火墙开机不启动</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo systemctl disable firewalld</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>查看防火墙状态</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo systemctl status  firewalld</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>关闭selinux</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vi &#x2F;etc&#x2F;selinux&#x2F;config</span><br></pre></td></tr></table></figure>
+
+<p>修改selinux=disabled</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># This file controls the state of SELinux on the system.</span><br><span class="line"># SELINUX&#x3D; can take one of these three values:</span><br><span class="line">#     enforcing - SELinux security policy is enforced.</span><br><span class="line">#     permissive - SELinux prints warnings instead of enforcing.</span><br><span class="line">#     disabled - No SELinux policy is loaded.</span><br><span class="line">SELINUX&#x3D;disabled</span><br><span class="line"># SELINUXTYPE&#x3D; can take one of three values:</span><br><span class="line">#     targeted - Targeted processes are protected,</span><br><span class="line">#     minimum - Modification of targeted policy. Only selected processes are protected.</span><br><span class="line">#     mls - Multi Level Security protection.</span><br><span class="line">SELINUXTYPE&#x3D;targeted</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>设置hosts映射</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vi &#x2F;etc&#x2F;hosts</span><br></pre></td></tr></table></figure>
+
+<p>修改内容 ip和主机名的映射</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">192.168.66.131 node01</span><br><span class="line">192.168.66.130 node02</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>时间同步</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install ntp -y</span><br></pre></td></tr></table></figure>
+
+<p>修改ntp配置文件</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vi &#x2F;etc&#x2F;ntp.conf</span><br></pre></td></tr></table></figure>
+
+<p>在service处添加阿里云的网址用来访问进行同步时间</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200804131327109.png" alt="image-20200804131327109"></p>
+<p>开关ntp：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">systemctl start ntpd</span><br><span class="line">systemctl status ntpd</span><br><span class="line">systemctl stop ntpd</span><br></pre></td></tr></table></figure>
+
+<p>设置开机启动：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">systemctl enable ntpd</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装JDK</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">rpm -i jdk-8u181-linux-x64.rpm</span><br></pre></td></tr></table></figure>
+
+<p>设置环境变量：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">export JAVA_HOME&#x3D;&#x2F;user&#x2F;java&#x2F;default</span><br><span class="line">export PATH&#x3D;$PATH:$JAVA_HOME&#x2F;bin</span><br></pre></td></tr></table></figure>
+
+<p>在使用ssh连接服务器时不会自动进行加载环境变量，所以需要手动加载</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200804132751744.png" alt="image-20200804132751744"></p>
+<p>使用source /etc/profile手动加载</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200804132842788.png" alt="image-20200804132842788"></p>
+</li>
+<li><p>设置SSH免秘钥</p>
+<p>查看ssh连接是否需要密码</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh localhost</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/08/04/hdfs-exec/image-20200804133416274.png" alt="image-20200804133416274"></p>
+<p>运行上述命令会自动创建一个.ssh文件夹</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200804133517765.png" alt="image-20200804133517765"></p>
+<p>生成秘钥和公钥</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t dsa -P &#39;&#39; -f ~&#x2F;.ssh&#x2F;id_dsa</span><br></pre></td></tr></table></figure>
+
+<p>自己和盒子免密：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat ~&#x2F;.ssh&#x2F;id_dsa.pub &gt;&gt; ~&#x2F;.ssh&#x2F;authorized_keys</span><br></pre></td></tr></table></figure>
+
+<p>如果想要免密登谁就把自己的公钥放到对方authorized_keys中，B包含了A的公钥，A就可免密登录</p>
+</li>
+</ol>
+<h3 id="部署配置"><a href="#部署配置" class="headerlink" title="部署配置"></a>部署配置</h3><p>伪分布式：（单一节点）</p>
+<ol>
+<li><p>部署路径</p>
+<ul>
+<li><p>创建文件夹</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir &#x2F;opt&#x2F;bigdata</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>解压hadoop压缩包</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar xf hadoop-2.6.5.tar.gz</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>把hadoop移入目录</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mv hadoop-2.6.5 &#x2F;opt&#x2F;bigdata&#x2F;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改配置文件</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vi &#x2F;etc&#x2F;profile</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/08/04/hdfs-exec/image-20200804145352899.png" alt="image-20200804145352899"></p>
+</li>
+<li><p>加载配置文件</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">source &#x2F;etc&#x2F;profile</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>配置文件</p>
+<p>切换当前目录： cd $HADOOP_HOME/etc/hadoop</p>
+<ul>
+<li><p>hadoop-env.sh</p>
+<p>vi hadoop-env.sh</p>
+<p>修改文件中的erport JAVA_HOME这行，把调用的环境变量改为绝对路径，因为默认ssh不会加载系统的环境变量。</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200804152539360.png" alt="image-20200804152539360"></p>
+</li>
+<li><p>core-site.xml</p>
+<p>给出namenode角色在哪启动</p>
+<p>vi core-site.xml修改文件配置</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;fs.defaultFS&lt;&#x2F;name&gt;</span><br><span class="line">        &lt;value&gt;hdfs:&#x2F;&#x2F;node02:9000&lt;&#x2F;value&gt;</span><br><span class="line">    &lt;&#x2F;property&gt;</span><br><span class="line">&lt;&#x2F;configuration&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>hdfs-site.xml</p>
+<p>vi hdfs-site.xml设置副本数</p>
+<p>由于dfS.namenode.name.dir的默认参数是/tmp/hadoop-${user.name}，由于/tmp文件夹中数据默认保留10天，十天后就会进行删除。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;dfs.replication&lt;&#x2F;name&gt;</span><br><span class="line">        &lt;value&gt;1&lt;&#x2F;value&gt;</span><br><span class="line">    &lt;&#x2F;property&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;dfS.namenode.name.dir&lt;&#x2F;name&gt;</span><br><span class="line">        &lt;value&gt;&#x2F;var&#x2F;bigdata&#x2F;hadoop&#x2F;local&#x2F;name&lt;&#x2F;value&gt;</span><br><span class="line">    &lt;&#x2F;property&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;dfS.datanode.name.dir&lt;&#x2F;name&gt;</span><br><span class="line">        &lt;value&gt;&#x2F;var&#x2F;bigdata&#x2F;hadoop&#x2F;local&#x2F;data&lt;&#x2F;value&gt;</span><br><span class="line">    &lt;&#x2F;property&gt;</span><br><span class="line">&lt;&#x2F;configuration&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>slaves</p>
+<p>node02</p>
+<p>决定从哪台开始启动DataNode</p>
+</li>
+</ul>
+</li>
+<li><p>分发配置</p>
+</li>
+</ol>
+<h3 id="初始化运行和启动"><a href="#初始化运行和启动" class="headerlink" title="初始化运行和启动"></a>初始化运行和启动</h3><ol>
+<li><p>格式化</p>
+<p>cd /var/发现并没有bigdata目录，配置文件中的目录需要自己生成</p>
+<p>hdfs进行格式化</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hdfs namenode -format</span><br></pre></td></tr></table></figure>
+
+<p>出现下面界面即成功</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200805112919007.png" alt="image-20200805112919007"></p>
+<p>此时查看ls /var出现bigdata文件夹</p>
+</li>
+</ol>
+<ol start="2">
+<li><h3 id="命令行使用"><a href="#命令行使用" class="headerlink" title="命令行使用"></a>命令行使用</h3></li>
+</ol>
+<h3 id="伪分布式-在一个节点驱动所有角色：NN、DN、SNN"><a href="#伪分布式-在一个节点驱动所有角色：NN、DN、SNN" class="headerlink" title="伪分布式:在一个节点驱动所有角色：NN、DN、SNN"></a>伪分布式:在一个节点驱动所有角色：NN、DN、SNN</h3><h3 id="完全分布式："><a href="#完全分布式：" class="headerlink" title="完全分布式："></a>完全分布式：</h3><p>基础环境</p>
+<p>部署配置</p>
+<pre><code>     1. 角色在哪启动
+  - NN：core-site.xml： fs.defaultFS  hdfs://node01:9000
+  - DN：salves： node1
+  - SNN：hdfs-siet.xml
+     2. 角色启动时的细节配置
+  - dfs.namenode.name.dir
+  - dfs.datanode.data.dir
+   3. 初始化和启动
+- 格式化
+  - FSimage
+  - VERSION
+- start-dfs.sh
+  - 通过加载配置文件
+  - 通过ssh，免密去启动相应的角色</code></pre><p>伪分布式到完全分布式</p>
+<p>停止所有角色</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200807084853281.png" alt="image-20200807084853281"></p>
+<p>为其他服务器进行基础配置，配置免密时把自己的公钥发给其他主机，其他主机存在/root/.ssh/authorized_keys里面，其他主机存储了该主机的公钥就代表接受了该主机的访问要求，这时该主机就可以免密登录其他主机。公钥给谁就可以免密登录谁。</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200807095741631.png" alt="image-20200807095741631"></p>
+<p>配置部署：</p>
+<p>​    </p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200807110805598.png" alt="image-20200807110805598"></p>
+<p>使用下面文件配置DN节点都有哪些</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vi slaves</span><br></pre></td></tr></table></figure>
+
+<p>node01</p>
+<p>node03</p>
+<p>格式化启动：</p>
+<h2 id="hdfs-ha"><a href="#hdfs-ha" class="headerlink" title="hdfs-ha"></a>hdfs-ha</h2><h3 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h3><p>主从集群：结构相对简单、主与从协作</p>
+<ul>
+<li>主：单点，数据一致好掌握</li>
+<li>问题：<ul>
+<li>单点故障、集群整体不可用</li>
+<li>压力过大、内存受限</li>
+</ul>
+</li>
+<li>解决方案:<ul>
+<li>单点故障：<ul>
+<li>高可用方案：HA</li>
+<li>多个NN，主备切换</li>
+</ul>
+</li>
+<li>压力过大，内存受限：<ul>
+<li>联邦机制：Federation（元数据切片）</li>
+<li>多个NN，管理不同的元数据</li>
+</ul>
+</li>
+<li>HADOOP 2.X 只支持一主一备</li>
+</ul>
+</li>
+</ul>
+<h3 id="HDFS-HA解决方案："><a href="#HDFS-HA解决方案：" class="headerlink" title="HDFS-HA解决方案："></a>HDFS-HA解决方案：</h3><p><img src="/2020/08/04/hdfs-exec/image-20200807111805272.png" alt="image-20200807111805272"></p>
+<p>根据图中可以看到有两个NN节点，一主一被，现在想要主NN发生故障可以立即切换至备NN。</p>
+<blockquote>
+<p>NameNode中的元数据：</p>
+<ol>
+<li>客户端交互产生的数据  比如mkdir /a命令</li>
+<li>datanode提交的block</li>
+</ol>
+</blockquote>
+<p>数据一致性问题：</p>
+<ul>
+<li><p>nn中有两种数据需要同步，其中DN提交数据时是同时向两个NN提交的，所以不需要其他同步措施。</p>
+</li>
+<li><p>针对客户端产生的数据</p>
+<ul>
+<li><p>CAP原则：</p>
+<ul>
+<li>Consistency：一致性</li>
+<li>Availability：可用性</li>
+<li>Partition tolerance：分区容忍性（多个区之间通信可能会失败）</li>
+<li>这三个原则不可能同时实现</li>
+<li><img src="/2020/08/04/hdfs-exec/image-20200807113312296.png" alt="image-20200807113312296"></li>
+<li>CA：关系数据库（单机）</li>
+<li>CP：MangoDB，HBase，Redis<ul>
+<li>比如有两个数据A、B存在不同的机器，如果操作A就对A进行修改就和B没有关系，就可以满足CP，但是并不满足好可用性，就比如其中一个数据的机器坏掉了就没有办法再访问该数据了。</li>
+</ul>
+</li>
+<li>AP：</li>
+<li>所以在分布式中强一致性破坏可用性</li>
+</ul>
+</li>
+<li><p>强一致性和弱一致性的访问流程</p>
+<ul>
+<li>强一致性<ul>
+<li>客户端访问主节点产生交互数据，主节点访问从节点对产生的数据进行备份，等从节点返回数据存储成功后主节点再向客户端返回存储成功的状态。</li>
+<li>这种方式的缺点就是如果从节点死机则主节点接受不到备份成功的信号就无法返回状态给客户端。</li>
+</ul>
+</li>
+<li>弱一致性<ul>
+<li>客户端访问主节点产生交互数据，主节点访问从节点对产生的数据进行备份，不等从节点返回成功主节点就返回客户端存储成功的状态，等从节点存储成功后再异步的把成功消息传给主机。</li>
+<li>这种方式的缺点就是并不能保证每条数据都一致性保存，如果从主机死机也不知道。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Paxos算法在此处的应用</p>
+<ul>
+<li><p>最基本的思想是在主从节点之间增加一个比较可靠的节点进行中间存储，主节点和这个中间节点保持强一致性，中间节点和从节点使用异步通信。这时候问题出现了，怎么保证中间节点是可靠的不会发生死机呢，那么使用的方法就是把中间的节点换成一个集群，在这个集群中选择一个节点与主节点进行通讯，主节点把数据传给它以后，它在集群中对数据进行一致性保存，当保存的数据的机器数量超过集群机器的一半的时候就返回主节点成功，主节点再返回客户端。</p>
+</li>
+<li><p>然后从节点再异步的在集群中获取数据，找集群中数据最多的点就是最新的数据（访问一半+1个节点的数据就能找到最多的）</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200807182021863.png" alt="image-20200807182021863"></p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="/2020/08/04/hdfs-exec/image-20200807183426403.png" alt="image-20200807183426403"></p>
+<ul>
+<li><p>ZK的几个特征</p>
+<pre><code>- 有目录树结构：x节点进行抢锁，谁抢到锁谁是主节点</code></pre><ul>
+<li>事件机制-》call back(回调)，随着时间推移，假设NNActive挂掉，那么ZKFC将会把锁删除，锁删除就会触发一个回调事件，另一个ZKFC进行新一轮抢锁，把自己生成active。<pre><code>- 回调方式的优势：在锁被删除时候立即回调实时性比较好，而如果ZJFC每隔一段时间查询一下锁是否被删除会有时间间隔。</code></pre><ul>
+<li>临时节点</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>FCA有三只手</p>
+<pre><code>- 第一只手：实时监控namenode是不是还在运行（健康检查）
+- 第二只手：连接zookeeper
+- 第三只手：在active挂掉时，原本的从节点通过抢锁变成新的active，这时FCA在连接节点前会先连接原本的主节点看它是否真的挂掉了。</code></pre><blockquote>
+<p>整理一下：namenode active挂掉以后切换节点的流程：</p>
+<ol>
+<li>ZKFC检测到NNactive挂掉以后会删除在ZK中创建的锁</li>
+<li>锁被删除后会触发原本存在锁中的另一个节点ZKFC的回调函数</li>
+<li>回调函数进行新一轮的抢锁（毫无疑问是可以抢到的）</li>
+<li>抢锁成功后先连接原本的active节点确定一下该节点是不是真的挂掉了</li>
+<li>如果真的挂掉了再连接节点</li>
+<li>如果没有挂掉那说明可能是原节点的zkfc挂掉了，这时就把原主节点变成从节点</li>
+</ol>
+<p><img src="/2020/08/04/hdfs-exec/image-20200807194156813.png" alt="image-20200807194156813"></p>
+</blockquote>
+<blockquote>
+<p>描述一种极端情况：</p>
+<p> NNACTIVE和它的ZKFC都没有出现问题，除了和ZK集群不能通信其余都没有问题。这时候ZK的锁消失了，抢到锁的ZKFC去确定原来的ACTIVE是否真的挂掉时并不能连接成功，这时候这个ZKFC就会不知道怎么办，因为它也不确定原来的active是不是真的挂掉，就不敢让它的节点变成ACTIVE。</p>
+<p>解决方法：</p>
+<p>所有机器都连一个串口接到对方电源，如果出现上述情况直接把对方电源关了，就可以放心的把自己设成ACTIVE了。</p>
+</blockquote>
+<p>总结HA方案：</p>
+<p>在HA模式中没有SNN，standbyNN完成了SNN的功能，SNN是在非HA模式下</p>
+<p><img src="/2020/08/04/hdfs-exec/image-20200807195707983.png" alt="image-20200807195707983"></p>
+</li>
+</ul>
+<h3 id="解决压力过大，内存受限的问题-–-HDFS-Federation"><a href="#解决压力过大，内存受限的问题-–-HDFS-Federation" class="headerlink" title="解决压力过大，内存受限的问题 – HDFS-Federation"></a>解决压力过大，内存受限的问题 – HDFS-Federation</h3><p>元数据分治复用DN存储</p>
+<p>元数据访问隔离性</p>
+<p>DN目录block隔离性 </p>
+]]></content>
+  </entry>
+  <entry>
+    <title>paperArrange</title>
+    <url>/2020/08/02/paperArrange/</url>
+    <content><![CDATA[<h2 id="1-Method-for-replica-selection-in-the-Internet-of-Things-using-a-hybrid-optimisation-algorithm"><a href="#1-Method-for-replica-selection-in-the-Internet-of-Things-using-a-hybrid-optimisation-algorithm" class="headerlink" title="1.Method for replica selection in the Internet of Things using a hybrid optimisation algorithm"></a>1.Method for replica selection in the Internet of Things using a hybrid optimisation algorithm</h2><blockquote>
+<p>论文名：混合优化算法在物联网中选择副本的方法</p>
+</blockquote>
+<p>优化目标：成本c和等待时间t</p>
+<p><img src="/2020/08/02/paperArrange/image-20200803162315035.png" alt="image-20200803162315035"></p>
+<p>步骤：</p>
+<ol>
+<li><p>初始化：生成N个蚂蚁，初始化信息素，还完成ACO和GA参数的初始化</p>
+</li>
+<li><p>ACO运动：所有蚂蚁随机选择一个数据中心作为起点，从该点开始遍历图形。蚂蚁在运动中会产生信息素，由于边缘上没有信息素，可以根据公式在边缘上放置信息素。</p>
+<p><img src="/2020/08/02/paperArrange/image-20200804170844025.png" alt="image-20200804170844025"></p>
+<p>其中的参数如下：</p>
+<p><img src="/2020/08/02/paperArrange/image-20200805181630368.png" alt="image-20200805181630368"></p>
+</li>
+</ol>
+<ol start="3">
+<li><p>信息素更新 </p>
+<p>在每次迭代中，信息素水平都会根据以下公式进行更新：</p>
+<p><img src="/2020/08/02/paperArrange/image-20200804171104213.png" alt="image-20200804171104213"></p>
+<p>其中信息素的变化值△τk,(t) = - 文件大小/带宽，远程访问的成本决定了信息素水平的降低程度</p>
+</li>
+</ol>
+<ol start="4">
+<li>ACO估计</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>hdfs</title>
+    <url>/2020/08/02/hdfs/</url>
+    <content><![CDATA[<blockquote>
+<p> 问题：分布式文件系统这么多，hadoop为什么还要开发一个hdfs文件系统？？？？</p>
+</blockquote>
+<h2 id="存储模型"><a href="#存储模型" class="headerlink" title="存储模型"></a>存储模型</h2><ul>
+<li>文件线性按字节切割成快（block），具有offset，id<ul>
+<li>offset是块偏移 id是标记</li>
+</ul>
+</li>
+<li>文件与文件的block大小可以不一样</li>
+<li>一个文件除最后一个block，其他block大小一样</li>
+<li>block大小依据硬件的I/O特性调整<ul>
+<li>根据硬盘的读取速度设置块大小</li>
+</ul>
+</li>
+<li>block被分散存放在集群的节点中，具有location<ul>
+<li>location是指块在哪个地址</li>
+</ul>
+</li>
+<li>block具有副本，没有主从概念，副本不能出现在同一节点</li>
+<li>副本时满足可靠性和性能的关键</li>
+<li>文件上传可以指定block大小和副本数，上传后只能修改副本数</li>
+<li>一次写入多次读取，不支持修改</li>
+<li>支持追加数据</li>
+</ul>
+<h2 id="架构设计"><a href="#架构设计" class="headerlink" title="架构设计"></a>架构设计</h2><ul>
+<li><p>HDFS是一个主从(Master/Slaves)架构</p>
+</li>
+<li><p>由一个NameNode和一些DataNode组成</p>
+</li>
+<li><p>面向文件包含:文件数据(data)和文件元数据(metadata)</p>
+<ul>
+<li>元数据是指文件的一些信息，不包括文件的数据内容</li>
+</ul>
+</li>
+<li><p>元数据包括文件属性和每个块存放在那个DataNode上</p>
+<ul>
+<li><img src="/2020/08/02/hdfs/image-20200803095529315.png" alt="image-20200803095529315"></li>
+</ul>
+</li>
+<li><p>NameNode负责存储和管理文件元数据，并维护了一个层次型的文件目录树</p>
+</li>
+<li><p>DataNode负责存储文件数据(block块)，并提供block的读写</p>
+</li>
+<li><p>DataNode与NameNode维持心跳，并汇报自己持有的block信息</p>
+</li>
+<li><p>Client和NameNode交互文件元数据和DataNode交互文件block数据</p>
+</li>
+</ul>
+<blockquote>
+<p>linux和windows文件系统的区别：</p>
+<ul>
+<li>windows上可能比较混乱，每台电脑的盘符都不一样<ul>
+<li>如果一个软件要加载G盘的一个文件，没有G盘就无法加载</li>
+</ul>
+</li>
+<li>linux系统没有盘符的概念，就是一个目录树<ul>
+<li>没有盘符的概念，要加载/g中文件，没有/g也可以创建</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>角色即JVM进程</p>
+</blockquote>
+<p><img src="/2020/08/02/hdfs/image-20200803085120039.png" alt="image-20200803085120039"></p>
+<p><strong>文件拆分和副本放置</strong></p>
+<p><img src="/2020/08/02/hdfs/image-20200803085322045.png" alt="image-20200803085322045"></p>
+<h2 id="角色功能"><a href="#角色功能" class="headerlink" title="角色功能"></a>角色功能</h2><ul>
+<li>NameNode：<ul>
+<li>完全基于内存存储文件元数据、目录结构、文件block的映射</li>
+<li>需要持久化方案保证数据可靠性</li>
+<li>提供副本防止策略</li>
+</ul>
+</li>
+<li>DataNode<ul>
+<li>基于本地磁盘存储的block（文件的形式）</li>
+<li>并保存block的校验和用来保证block的可靠性</li>
+<li>与NameNode保持心跳，回报block列表状态</li>
+</ul>
+</li>
+</ul>
+<h2 id="元数据持久化"><a href="#元数据持久化" class="headerlink" title="元数据持久化"></a>元数据持久化</h2><p> <strong>数据持久化方案：</strong></p>
+<ol>
+<li><p>日志文件：记录实时发生的增删改查的操作  ————–  文本文件</p>
+<ul>
+<li>完整性比较好</li>
+<li>加载恢复数据慢/占空间</li>
+</ul>
+</li>
+<li><p>快照、镜像、dump、db：间隔一段时间把内存的全量数据写入磁盘</p>
+<ul>
+<li>恢复速度快过日志文件</li>
+<li>因为是间隔的所以容易丢失一部分数据</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>一个问题举例：请问数据999999999占用多大磁盘空间     </p>
+<ul>
+<li>文件编码：txt -&gt; 以byte为单位存储  -&gt; 9个字节</li>
+<li>int a = 999999999 -&gt; 4个字节</li>
+</ul>
+<p>所以得出结论int类型存储小于二进制文件存储</p>
+</blockquote>
+<p>HDFS的持久化方案：</p>
+<ul>
+<li>EditsLog：日志<ul>
+<li>目标要保证日志体积小、记录少</li>
+</ul>
+</li>
+<li>FsImage：镜像、快照<ul>
+<li>目标要实现更快的滚动更新时点</li>
+</ul>
+</li>
+</ul>
+<p>解决方案：使用最近时点的FsImage + 短时间内的增量日志EditsLog </p>
+<blockquote>
+<p>问题：FsImage是怎么滚动更新的？</p>
+<p>有一种方案是NameNode隔一段时间就从内存中溢写一次，但是每次溢写都会产生大量的I/O消耗</p>
+<p>第二种方案是NameNode在机器第一次开机的时候写入一次FsImage，在机器运行不到时间间隔的期间内记录EditsLog，到时间就把日志恢复到FsImage中。但是这种方案有一个问题恢复日志也是需要消耗资源，要想解决这个问题就需要寻求另外一台机器进行恢复日志。</p>
+</blockquote>
+<h2 id="安全模式"><a href="#安全模式" class="headerlink" title="安全模式"></a>安全模式</h2><p>NameNode启动的流程：</p>
+<ul>
+<li><p>HDFS搭建时会格式化，格式化操作会产生一个空的FsImage</p>
+</li>
+<li><p>当NameNode启动时，它从磁盘中读取EditLog和FsImage</p>
+</li>
+<li><p>将所有EditLog中的事务作用在内存中的FsImage上</p>
+</li>
+<li><p>并且将新版本的FsImage从内存中保存在磁盘上</p>
+</li>
+<li><p>删除旧的EditLog，因为这个旧的EditLog的事务已经作用在了FsImage上了</p>
+</li>
+</ul>
+<p>NameNode启动时的安全模式：</p>
+<blockquote>
+<p>在持久化的时候文件的属性会持久化，但是元数据中的每个块存在那个DataNode的信息不会进行持久化，以防止给数据分配的DataNode已经失效，等待DataNode回复信息后再进行添加以保证DataNode的运行状态，这一过程就是安全模式。</p>
+</blockquote>
+<ul>
+<li>NameNode启动后会进行一个称为安全模式的特殊状态</li>
+<li>处于安全模式的NameNode是不会进行数据块的复制的</li>
+<li>NameNode从所有的DataNode接收心跳信号和状态报告</li>
+<li>每当NameNode检测确认某个数据块的副本数目达到这个最小值，那么该数据库会被认为是副本安全(safely replicated)的</li>
+<li>在一定百分比的数据被NameNode检测确认是安全之后，NameNode将会退出安全模式状态</li>
+<li>接下来它会确定还有哪些数据库的副本没有达到指定书目，并将数据块复制到DataNode上</li>
+</ul>
+<h2 id="HDFS中的SNN"><a href="#HDFS中的SNN" class="headerlink" title="HDFS中的SNN"></a>HDFS中的SNN</h2><blockquote>
+<p>SNN就是用来解决在数据持久化中数据滚动更新是用来运行EditLog向FsImage合并的机器</p>
+</blockquote>
+<p>SecondaryNameNode（SNN）</p>
+<ul>
+<li>在非Ha模式下，SNN一般是独立的节点，周期完成对NN的EditLog向FsImage合并，减少EditLog大小，减少NN启动时间。</li>
+<li>根据配置文件设置的时间间隔fs.checkpoint.period默认3600秒</li>
+<li>根据配置文件设置edits log大小fs.checkpoint.size规定edits文件的最大值默认是64MB</li>
+<li>满足以上两个条件都会触发合并</li>
+</ul>
+<p>过程：</p>
+<p><img src="/2020/08/02/hdfs/image-20200803100929400.png" alt="image-20200803100929400"></p>
+<h2 id="block的副本放置策略"><a href="#block的副本放置策略" class="headerlink" title="block的副本放置策略"></a>block的副本放置策略</h2><ul>
+<li>第一个副本：放置在上传文件的DN；如果是集群外提交，则随机挑选一台磁盘不太满，CPU不太忙的节点</li>
+<li>第二个副本：放在于第一个副本不同的机架的节点</li>
+<li>第三个副本：与第二个副本相同机架的节点</li>
+<li>更多副本：随机节点</li>
+</ul>
+<p><img src="/2020/08/02/hdfs/image-20200803103219479.png" alt="image-20200803103219479"></p>
+<blockquote>
+<p>第三个副本放置在同一个机架是因为不需要经过路由节省成本。</p>
+</blockquote>
+<h2 id="HDFS读写流程"><a href="#HDFS读写流程" class="headerlink" title="HDFS读写流程"></a>HDFS读写流程</h2><p><strong>写流程：</strong></p>
+<p><img src="/2020/08/02/hdfs/image-20200803104507763.png" alt="image-20200803104507763"></p>
+<ol>
+<li>HDFS客户端对数据进行拆分成block</li>
+<li>Client和NN连接创建文件元数据</li>
+<li>NN判定元数据是否有效</li>
+<li>NN触发副本放置策略，返回一个有序的DN列表</li>
+<li>Client和DN建立Pipeline连接（一个传输副本的通道）</li>
+<li>Client将block分成packet（64KB），并使用chunk（512B）</li>
+<li>Client将packet发送到队列dataqueue中，并向第一个DN发送</li>
+<li>第一个DN收到packet后本地保存发送给第二个DN</li>
+<li>第二个DN收到packet后本地保存并发给第三个DN</li>
+<li>这个过程中，上游节点同时同时发送下一个packet（相当于并行传输，第一个DN在接受完第一个包以后就进行传输，这样整个副本间数据传输就相当于穿了一次的时间多了一点点）</li>
+</ol>
+<blockquote>
+<ul>
+<li>HDFS使用这种传输方式，副本数对于Client是透明的</li>
+<li>当block传输完成，DN分别向各自的NN汇报，同时Client继续传输下一个blcok</li>
+<li>所以client传输和block汇报也是并行的</li>
+</ul>
+</blockquote>
+<p><strong>读流程：</strong></p>
+<p><img src="/2020/08/02/hdfs/image-20200803113347761.png" alt="image-20200803113347761"> </p>
+<ol>
+<li>client联系NN取回块的位置信息</li>
+<li>client读取每个块的数据时分别选择一个离自己最近的DN进行下载</li>
+</ol>
+<ul>
+<li><p>为了降低整体的带宽消耗和读延迟，HDFS会尽量让读取程序读取离他最近的副本</p>
+</li>
+<li><p>如果再读取程序的同一个机架上有一个副本，那么就读该副本</p>
+</li>
+<li><p>如果一个HDFS集群跨越多个数据中心，那么客户端也将首先读本地数据中心的副本</p>
+</li>
+<li><p>语义：</p>
+</li>
+<li><p>　　download a file</p>
+</li>
+<li><p>　　Client和NN交互文件元数据获取fileBlockLocation</p>
+</li>
+<li><p>　　NN按距离策略排序返回</p>
+</li>
+<li><p>　　Client尝试下载Block并且校验数据完整性（校验盒校验）</p>
+<blockquote>
+<p>下面这部分非常重要</p>
+</blockquote>
+</li>
+<li><p>语义：下载一个文件其实是获取文件的所有的Block元数据，那么子集获取block应该成立</p>
+</li>
+<li><p>　　Hdfs支持Client输出文件的offset自定义连接哪些Block的DN，自定义获取数据</p>
+</li>
+<li><p>　　这个是支持计算层的分治，并行计算的核心（牢记）</p>
+</li>
+</ul>
+<blockquote>
+<p>对问题的一个解答：</p>
+<p>问题：分布式文件系统这么多，hadoop为什么还要开发一个hdfs文件系统？？？？</p>
+<p>解答：hdfs是以块为单位进行存储的，client会在NN处获得每个块的存储位置，如果我们的程序只需要这个文件某一块上面的数据就可以直接连接该块的DN节点过去数据，可以少读取数据，即节省传输数据量又节省时间。这样可以更好地支持分布式计算，为分布式计算提供更快的文件读取速度和更少的文件读取量，节省了计算的时间和内存。</p>
+</blockquote>
+]]></content>
+  </entry>
+  <entry>
+    <title>docker</title>
+    <url>/2020/07/30/docker/</url>
+    <content><![CDATA[<h2 id="Docker"><a href="#Docker" class="headerlink" title="Docker"></a>Docker</h2><blockquote>
+<p>docker中文文档：<a href="http://www.dockerinfo.net/document" target="_blank" rel="noopener">docker中文文档</a></p>
+</blockquote>
+<h3 id="1-部署mysql"><a href="#1-部署mysql" class="headerlink" title="1. 部署mysql"></a>1. 部署mysql</h3><ul>
+<li><p>拉取mysql镜像</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker pull centos&#x2F;mysql-57-centos</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>创建容器</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -di --name&#x3D;tensquare_mysql -p 33306:3306 -e MYSQL_ROOT_PASSWORD&#x3D;123456 mysql</span><br></pre></td></tr></table></figure>
+
+<p>运行容器时的参数：</p>
+<p>-i表示运行容器</p>
+<p>-t表示容器创建后自动进入容器，退出后容器停止</p>
+<p>-d表示创建一个守护式容器在后台运行</p>
+<p>–name表示给容器起名字</p>
+<p>-v表示目录映射关系</p>
+</li>
+</ul>
+<p>  -p代表端口映射，格式为宿主机端口:容器运行端口</p>
+<p>  -e代表添加环境变量</p>
+<ul>
+<li><p>进入容器</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker exec -it tensquare_mysql &#x2F;bin&#x2F;bash</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>登陆mysql</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/07/30/docker/image-20200730205013850.png" alt="image-20200730205013850"></p>
+</li>
+<li><p>远程登录mysql</p>
+<p>使用navicate配置：</p>
+<p><img src="/2020/07/30/docker/image-20200730205135514.png" alt="image-20200730205135514"></p>
+</li>
+</ul>
+<h3 id="2-部署tomcat"><a href="#2-部署tomcat" class="headerlink" title="2. 部署tomcat"></a>2. 部署tomcat</h3><ul>
+<li><p>拉取tomcate</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker pull tomcat:7-jre7</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/07/30/docker/image-20200730210337226.png" alt="image-20200730210337226"></p>
+</li>
+<li><p>创建容器</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -di --name&#x3D;mytomcat -p 9000:8080 -v &#x2F;usr&#x2F;local&#x2F;webapps:&#x2F;usr&#x2F;local&#x2F;tomcat&#x2F;webapps tomcat:7-jre7</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/07/30/docker/image-20200730210527009.png" alt="image-20200730210527009"></p>
+</li>
+<li><p>测试是否创建成功</p>
+<p>使用单点登录程序cas进行测试，把cas传入系统中对应的映射目录中，在浏览器中直接访问即可。</p>
+<p>使用secureCRT可直接登录SFTP</p>
+<p><img src="/2020/07/30/docker/image-20200730210814461.png" alt="image-20200730210814461"></p>
+<p>在浏览器中访问</p>
+<p><img src="/2020/07/30/docker/image-20200730210908223.png" alt="image-20200730210908223"></p>
+</li>
+</ul>
+<h3 id="3-部署nginx"><a href="#3-部署nginx" class="headerlink" title="3. 部署nginx"></a>3. 部署nginx</h3><ul>
+<li><p>拉取nginx</p>
+<p><img src="/2020/07/30/docker/image-20200730211041115.png" alt="image-20200730211041115"></p>
+</li>
+<li><p>创建容器</p>
+<p><img src="/2020/07/30/docker/image-20200730211102166.png" alt="image-20200730211102166"></p>
+</li>
+<li><p>测试</p>
+<ol>
+<li><p>进入容器</p>
+</li>
+<li><p>通过配置文件找到网站根目录</p>
+</li>
+<li><p>在网站根目录创建静态页面用来测试</p>
+<p><img src="/2020/07/30/docker/image-20200730211351599.png" alt="image-20200730211351599"></p>
+<p><img src="/2020/07/30/docker/image-20200730211417773.png" alt="image-20200730211417773"></p>
+<p><img src="/2020/07/30/docker/image-20200730211458351.png" alt="image-20200730211458351"></p>
+<p><img src="/2020/07/30/docker/image-20200730211525403.png" alt="image-20200730211525403"></p>
+</li>
+</ol>
+</li>
+</ul>
+<h3 id="4-迁移与备份"><a href="#4-迁移与备份" class="headerlink" title="4. 迁移与备份"></a>4. 迁移与备份</h3><ul>
+<li><p>容器保存为镜像</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker commit mynginx mynginx-i</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/07/30/docker/image-20200730211756678.png" alt="image-20200730211756678"></p>
+</li>
+<li><p>镜像备份</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker save -o myginx.tar  mynginx-i</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>镜像恢复与迁移</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker load -i myginx.tar</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/07/30/docker/image-20200730211933860.png" alt="image-20200730211933860"></p>
+</li>
+</ul>
+<h3 id="5-dockerfile"><a href="#5-dockerfile" class="headerlink" title="5. dockerfile"></a>5. dockerfile</h3><p>用来基于一个基础镜像构建一个新的镜像</p>
+<p>常用命令：</p>
+<p><img src="/2020/07/30/docker/image-20200730213120140.png" alt="image-20200730213120140"></p>
+<ul>
+<li><p>构建gdk1.8</p>
+<ul>
+<li><p>创建构建目录</p>
+</li>
+<li><p>上传jdk1.8的环境压缩包</p>
+</li>
+<li><p>把文件移动到构建目录</p>
+</li>
+<li><p>在构建目录中创建文件Dockerfile（大小写固定）</p>
+<p><img src="/2020/07/30/docker/image-20200730213410205.png" alt="image-20200730213410205"></p>
+</li>
+<li><p>编写Dockerfile</p>
+<p><img src="/2020/07/30/docker/image-20200730213429104.png" alt="image-20200730213429104"></p>
+</li>
+<li><p>构建镜像</p>
+<p><img src="/2020/07/30/docker/image-20200730213521033.png" alt="image-20200730213521033"></p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="6-构建docker私有仓库"><a href="#6-构建docker私有仓库" class="headerlink" title="6. 构建docker私有仓库"></a>6. 构建docker私有仓库</h3><ol>
+<li><p>拉取私有仓库</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker pull registry</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/07/30/docker/image-20200730215116760.png" alt="image-20200730215116760"></p>
+</li>
+<li><p>创建私有仓库容器进行搭建</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -di --name&#x3D;registry -p 5000:5000 registry</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/07/30/docker/image-20200730215238303.png" alt="image-20200730215238303"></p>
+</li>
+<li><p>打开浏览器ip:5000/v2/_catalog看到{“repositories”:[]}表示创建成功</p>
+<p><img src="/2020/07/30/docker/image-20200730215714069.png" alt="image-20200730215714069"></p>
+</li>
+<li><p>修改daemon.json，信任私服，然后重启docker</p>
+<p><img src="/2020/07/30/docker/image-20200730215928917.png" alt="image-20200730215928917"></p>
+</li>
+<li><p>上传私服</p>
+<p><img src="/2020/07/30/docker/image-20200730220300301.png" alt="image-20200730220300301"></p>
+<p><img src="/2020/07/30/docker/image-20200730220319917.png" alt="image-20200730220319917"></p>
+<p><img src="/2020/07/30/docker/image-20200730220421665.png" alt="image-20200730220421665"></p>
+</li>
+<li><p>拉取私服的镜像</p>
+<p>在一个搭建了docker的服务器修改daemon.json文件，使用命令拉取</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker pull ip:5000&#x2F;jdk1.8</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+]]></content>
+      <tags>
+        <tag>docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>边缘计算综述</title>
+    <url>/2020/07/19/edgeComputing-1/</url>
+    <content><![CDATA[<blockquote>
+<p>论文名称：A Survey on Mobile Edge Computing: The Communication Perspective</p>
+<p>翻译名称：移动边缘计算研究：通信视角</p>
+<p>作者：<a href="https://ieeexplore.ieee.org/author/37085508893" target="_blank" rel="noopener">Yuyi Mao </a>; <a href="https://ieeexplore.ieee.org/author/37085636547" target="_blank" rel="noopener">Changsheng You </a><a href="https://orcid.org/0000-0003-3245-9361" target="_blank" rel="noopener"> </a>; <a href="https://ieeexplore.ieee.org/author/37086056429" target="_blank" rel="noopener">Jun Zhang </a><a href="https://orcid.org/0000-0002-5222-1898" target="_blank" rel="noopener"> </a>; <a href="https://ieeexplore.ieee.org/author/37290266200" target="_blank" rel="noopener">Kaibin Huang </a>; <a href="https://ieeexplore.ieee.org/author/37273525100" target="_blank" rel="noopener">Khaled B. Letaief</a></p>
+<p>发表时间： 25 August 2017</p>
+<p>发表期刊： <a href="https://ieeexplore.ieee.org/xpl/RecentIssue.jsp?punumber=9739" target="_blank" rel="noopener">IEEE Communications Surveys &amp; Tutorials</a></p>
+<p>dio : <a href="https://doi.org/10.1109/COMST.2017.2745201" target="_blank" rel="noopener">10.1109 / COMST.2017.2745201</a></p>
+<p>关键词：移动边缘计算，雾计算，移动云计算，计算分流，资源管理，绿色计算</p>
+</blockquote>
+<h2 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h2><p>在物联网和5G通信的愿景驱动下，近年来，移动计算发生了从集中式移动云计算向移动边缘计算（MEC）的转变。  MEC的主要功能是将移动计算，网络控制和存储推向网络边缘（例如基站和接入点），以便在资源受限的移动设备上启用计算密集型和延迟关键型应用程序。  MEC承诺将显着减少延迟和移动能源消耗，应对实现5G愿景的关键挑战。 MEC所承诺的成果已激发了学术界和工业界在开发该技术方面的广泛努力。MEC研究的主要目的是无缝融合无线通信和移动计算这两个领域，从而产生了各种各样的新设计，从计算分流技术到网络体系结构，不一而足。本文提供了对最新的MEC研究的全面综述，重点是联合无线电和计算资源管理。我们还将讨论有关MEC研究的一系列问题，挑战和未来的研究方向，包括MEC系统部署，启用缓存的MEC，MEC的移动性管理，绿色MEC以及具有隐私意识的MEC。这些方向的进步将促进MEC从理论到实践的转变。最后，我们介绍了有关MEC的最新标准化工作以及一些典型的MEC应用场景。</p>
+<h2 id="1-引言"><a href="#1-引言" class="headerlink" title="1. 引言"></a>1. 引言</h2><p>近十年来，云计近十年来，云计算已成为一种新的计算范式。它的愿景是将云计算，存储和网络管理集中化，指的是数据中心，骨干IP网络和蜂窝核心网络[1]，[2]。算已成为一种新的计算范式。它的愿景是将云计算，存储和网络管理集中化，指的是数据中心，骨干IP网络和蜂窝核心网络[1]，[2]。然后可以利用云中可用的大量资源来提供弹性计算力和存储以支持资源受限的最终用户设备。云计算一直在推动许多互联网公司的快速发展。例如，云业务已成为亚马逊最赚钱的行业[3]，而Dropbox的成功很大程度上取决于亚马逊的云服务。</p>
+<p>然而，近年来，随着云的功能越来越趋向网络边缘[4]，计算领域出现了新趋势。据估计，在不久的将来将部署数百亿个Edge设备，并且按照摩尔定律，它们的处理器速度将呈指数级增长。收获分布在网络边缘的大量空闲计算能力和存储空间可以产生足够的容量，以在移动设备上执行计算密集型和延迟关键型任务。这种范例称为移动边缘计算（MEC）[5]。尽管长的传播延迟仍然是云计算的主要缺点，但具有接近访问权限的MEC被广泛认为是实现下一代Internet（如触觉Internet（具有毫秒级反应时间））的各种愿景的关键技术[6]，物联网（IoT）[7]和Internet of Me[8]。当前，来自学术界和工业界的研究人员已经通过追求移动计算和无线通信两个学科的技术和理论的融合来积极地推广MEC技术。本文旨在从传播的角度对这一年轻领域的关键研究进展进行综述。我们还将提出一个研究前景，其中包含对MEC充满希望的研究方向的集合。</p>
+<h4 id="A-5G移动计算：从云到边缘"><a href="#A-5G移动计算：从云到边缘" class="headerlink" title="A.5G移动计算：从云到边缘"></a>A.5G移动计算：从云到边缘</h4><pre><code>&gt; MEC有点像边缘式的大数据处理平台，相当于把远端数据中心的离散为若干个小数据中心置于网络边缘去靠近用户一侧，可以视为一台运行在边缘的专有ECS。同时，由于MEC跑在网络边缘，因此其对网络其他部分的依赖程度并不高，并且可以实时获取基站等网络基础设施提供的信息，让链路的可感知、自适应成为可能，结合自身的数据分析能力来提升用户体验。</code></pre><p>​        在过去的十年中，移动设备的普及和移动Internet流量的指数增长一直在推动无线通信和网络的巨大进步。特别是，小蜂窝网络，多天线和毫米波通信的突破有望为用户提供下一代系统中的千兆无线接入[9]。高速率和高度可靠的空中接口允许在远程云数据中心运行移动设备的计算服务，这导致了研究领域称为移动云计算（MCC）。但是，MCC有一个固有的局限性，即从最终用户到远程云中心的传播距离很长，这会导致移动应用程序过高的延迟。因此，MCC不足以满足对延迟至关重要的各种新兴移动应用程序的需求。当前，正在设计新的网络架构，以更好地将云计算的概念集成到移动网络中，这将在本文的后半部分进行讨论。</p>
+<p>​        在5G无线系统中，将部署超密集型边缘设备，包括小型蜂窝基站（BS），无线接入点（AP），笔记本电脑，平板电脑和智能手机，其计算能力可与计算机媲美服务器十年前。这样，大量的设备将在每个时刻处于空闲状态。尤其是，它将在网络边缘收获大量可用的计算和存储资源，这将足以启用无处不在的移动计算。简而言之，从1G到4G的无线系统的主要目标是追求越来越高的无线速度，以支持从以语音为中心的流量向以多媒体为中心的流量过渡。随着无线速度接近有线通信的速度，5G的使命有所不同，也更加复杂，即支持ICT和互联网的爆炸性发展。在功能方面，5G系统将支持通信，计算，控制和内容交付（4C）。在应用方面，针对5G的各种新应用和服务正在涌现，例如实时在线游戏，虚拟现实（VR）和超高清（UHD）视频流，这些都需要空前的高访问速度和低延迟。在过去的十年中，也出现了下一代互联网的不同愿景，包括物联网，触觉互联网（具有毫秒级延迟），Me-of-Me和社交网络。尤其是，思科曾预测，到2020年，将有大约500亿个IoT设备（例如传感器和可穿戴设备）添加到Internet，其中大多数的计算，通信和存储资源有限，并且必须依赖云或边缘设备以增强其功能[10]。现在，人们普遍同意，仅依靠云计算不足以实现5G中计算和通信的毫秒级延迟。此外，最终用户和远程云之间的数据交换将使数据海啸饱和并关闭回程网络。因此，必须使用MEC来补充云计算，从而将流量，计算和网络功能推向网络边缘。这也与下一代网络的一个关键特征相吻合，即信息在本地越来越多地产生并在本地消费，这是由于物联网，社交网络和内容交付中应用的迅猛发展所致[4]。</p>
+<p>​        MEC的概念最早是由欧洲电信标准协会（ETSI）于2014年提出的，并被定义为“在移动用户附近提供无线电接入网（RAN）内的IT和云计算功能”的新平台[5]。MEC的原始定义是指使用BS卸载移动设备中的计算任务。最近，思科提出了雾计算的概念，将其作为MEC的一种通用形式，其中边缘设备的定义范围越来越广，从智能手机到机顶盒[11]。这导致了一个新的研究领域雾计算与网络的出现[4], [12], [13]，但是，雾计算和MEC的领域是重叠的，术语经常互换使用。在本文中，我们将重点放在MEC上，但是讨论的许多技术也适用于雾计算。</p>
+<p>​        MEC基于虚拟化平台实施，该平台利用了网络功能虚拟化（NFV），以信息为中心的网络（ICN）和软件定义的网络（SDN）的最新进展。具体来说，NFV通过创建用于同时执行不同任务或操作不同网络功能的多个虚拟机（VM），使单个边缘设备能够向多个移动设备提供计算服务[15]。另一方面，ICN为MEC提供了另一种端到端服务识别范例，从以主机为中心转变为以信息为中心，以实现上下文感知计算。最后，SDN允许MEC网络管理员通过功能抽象来管理服务，从而实现可扩展的动态计算[16]。  MEC研究的主要重点是开发这些通用网络技术，以便可以在网络边缘实施这些技术。</p>
+<p>​        通过将它们的计算密集型任务卸载到MEC服务器以执行云，越来越多的新兴移动应用程序将从MEC中受益。在下面，我们将提供两个示例来说明MEC的基本原理。一种是如图1所示的人脸识别应用程序，通常由五个主要计算组件组成，包括图像采集，人脸检测，预处理，特征提取和分类[17]。虽然需要在移动设备上执行图像获取组件以支持用户界面，但其他组件可以卸载以进行云处理，其中包含复杂的计算，例如信号处理和机器学习（ML）算法。可以利用网络边缘的丰富资源的另一种流行的应用程序流是增强现实（AR）应用程序，它可以将计算机生成的数据与物理现实相结合。如图2所示，AR应用程序具有五个关键组件[18]，[19]，即视频源（从移动相机获取原始视频帧），跟踪器（跟踪用户的位置），映射器（用于构建环境模型），对象识别器（用于识别环境中的已知对象），以及渲染器（准备处理后的帧以供显示）。在这些组件中，视频源和渲染器应在本地执行，而计算量最大的组件（即跟踪器，映射器和对象识别器）可以卸载以执行云。这样，移动用户可以享受到MEC带来的各种好处，例如减少等待时间和节省能源，这将在下一部分中详细介绍。</p>
+<p><img src="/2020/07/19/edgeComputing-1/image-20200719160329195.png" alt="image-20200719160329195"></p>
+<p><img src="/2020/07/19/edgeComputing-1/image-20200719160309311.png" alt="image-20200719160309311"></p>
+<h4 id="B-移动边缘计算与移动云计算"><a href="#B-移动边缘计算与移动云计算" class="headerlink" title="B.移动边缘计算与移动云计算"></a>B.移动边缘计算与移动云计算</h4><p>​        如表I所示，在计算服务器，与最终用户的距离和典型延迟等方面，MEC和MCC系统之间存在显着差异。与MCC相比，MEC具有实现较低延迟，节省移动设备能源，支持上下文感知计算，并增强移动应用程序的隐私和安全性。下面通过一些示例和应用简要描述这些优点。</p>
+<p><img src="/2020/07/19/edgeComputing-1/image-20200719162456007.png" alt="image-20200719162456007"></p>
+<p>​        低延迟：移动服务的延迟是三个部分的集合：传播，计算和通信延迟，分别取决于传播距离，计算能力和数据速率。首先，对于密集小蜂窝网络或设备到设备（D2D）传输，MEC的信息传播距离通常为数十米，并且一般情况下不超过1公里。相比之下，云计算需要从最终用户到核心网络或数据中心中的节点的传输，传输距离从几十公里到跨大洲的距离。这导致MEC的传播延迟比MCC的传播延迟短得多。其次，MCC要求信息通过包括无线电访问网络，回程网络和Internet在内的多个网络传递，在这些网络中，流量控制，路由和其他网络管理操作可能会导致过多的延迟。由于通信限制在网络边缘，因此MEC摆脱了这些问题。最后，对于计算延迟，云具有强大的计算能力，比边缘设备（例如，BS）的计算能力高几个数量级。但是，与边缘设备相比，云必须由更多的用户共享，从而减少了他们在计算延迟方面的差距。此外，现代的BS功能强大，足以运行高度复杂的计算程序。例如，BS的边缘云具有比运行“使命召唤13”（一种流行的射击游戏）的最低要求（例如，3.3  GHz以上的CPU，8GB  RAM，70GB存储空间）高102-104倍的计算能力。通常，实验表明，MCC的总等待时间在30到100毫秒之间[30]。这对于许多延迟关键的移动应用程序是不可接受的，例如实时在线游戏，虚拟体育和自动驾驶，这些应用程序可能需要触觉速度，延迟时间接近1ms  [36]。相比之下，通过短的传播距离和简单的协议，MEC可以为关键延迟5G应用实现触觉级延迟。</p>
+<p>​        <strong>移动节能</strong>：由于其紧凑的形式，物联网设备的能量存储有限，但有望配合并执行复杂的任务，例如监视，人群感应和健康监测[37]。考虑到即使不是不可能的，频繁的电池充电/更换也是不切实际的，为数以百亿计的IoT设备供电仍然是设计IoT的关键挑战。通过有效支持计算分流，MEC是延长物联网设备电池寿命很有前途的解决方案。具体来说，可以将计算密集型任务从物联网设备转移到边缘设备，以减少其能耗。实验证明了通过计算分流实现的显着节能，例如，对于多媒体应用eyeDentify  [38]，完成多达44倍的计算负荷；对于不同的AR应用，电池寿命增加30-50％[39]。</p>
+<p>​        <strong>上下文感知</strong>：区分MEC和MCC的另一个关键功能是MEC服务器具有利用边缘设备与最终用户的接近度来跟踪其实时信息（例如行为，位置和环境）的能力。基于此类信息的推理可以将上下文感知服务交付给最终用户[40]-[42]。例如，对于博物馆的视频指南，AR应用程序可以根据用户在博物馆中的位置来预测用户的兴趣，从而自动交付与艺术品和古董有关的内容[43]。另一个示例是CTrack系统，该系统使用BS指纹来跟踪和预测大量用户的轨迹，以进行交通监控，导航和路由以及个性化的行程管理[44]。</p>
+<p>​        <strong>增强隐私/安全性</strong>：与MCC相比，增强移动应用程序的隐私和安全性的功能也是MEC带来的诱人优势。在MCC系统中，云计算平台是远程公共大型数据中心，例如Amazon  EC2和Microsoft  Azure，由于其用户信息资源的高度集中而容易受到攻击。另外，用户数据的所有权和管理权在MCC中是分开的，这会引起私人数据泄漏和丢失的问题[45]。最近的边缘服务器的使用提供了一种有希望的解决方案来规避这些问题。一方面，由于分布式部署，小规模性质以及有价值信息的集中度降低，MEC服务器成为安全攻击目标的可能性大大降低。其次，许多MEC服务器可以是私有的cloudlet，这将减轻对信息泄漏的担忧。需要最终用户和服务器之间进行敏感信息交换的应用程序将从MEC中受益。例如，MEC的企业部署可以帮助避免将受限制的数据和资料上传到远程数据中心，因为企业管理员本身可以管理授权，访问控制并分类不同级别的服务请求，而无需外部单元[46]。</p>
+<h4 id="C-论文动机与概述"><a href="#C-论文动机与概述" class="headerlink" title="C.论文动机与概述"></a>C.论文动机与概述</h4><p>​        MEC已成为实现物联网和5G愿景的关键支持技术[15]，[47]，[48]。  MEC研究位于移动计算和无线通信的交汇处，在这里，许多研究机会的存在导致了高度活跃的领域。近年来，来自学术界和行业的研究人员已经研究了与MEC相关的广泛问题，包括系统和网络建模，最佳控制，多用户资源分配，实现和标准化。随后，通过几个已发表调查文章，以提供不同重点的MEC领域概述，包括系统模型，体系结构，启用技术，应用程序，边缘缓存，边缘计算分流以及与IoT和5G的连接[26]，[27]，[49]  ] – [55]。其主题概述如下。  [49]中介绍了MEC平台的概述，其中讨论了不同的现有MEC框架，体系结构及其应用场景，包括FemtoCloud，REPLISM和ME-VOLTE。  [50]的调查着重于MEC中的使能技术，例如云计算，VM，NFV和SDN，它们允许灵活的控制和多租户支持。刘等。  [51]对各种MEC应用程序，服务模型，部署方案以及网络体系结构进行了分类。  [52]中的调查提供了MEC应用程序的分类法，并确定了研究和开发的潜在方向，例如内容缩放，本地连接，扩充以及数据聚合和分析。在[27]中，对新兴的边缘计算，缓存和通信（3C）技术进行了研究，显示了3C的融合。此外，还讨论了MEC的关键推动因素，例如云技术，SDN  /  NFV和智能设备。文献[53]中的调查集中在针对MEC的计算分流中的三个关键设计问题，即分流决策，计算资源分配和移动性管理。另外，在[54]中通过参考物联网用例的MEC部署示例突出了MEC在物联网中的作用，即创建新的物联网服务。文献[26]中还介绍了5G网络中MEC的几种有吸引力的使用场景，包括移动边缘编排，协作缓存和处理以及多层干扰消除。此外，在[55]中从应用程序开发人员，服务提供商和网络设备供应商的角度讨论了与MEC相关的潜在商机。鉴于先前的工作，仍然缺乏系统的调查文章，其中将移动计算和无线通信深度融合，从而对特定的MEC研究结果进行了全面而具体的讨论，这激发了当前的工作。本文在以下方面与现有的MEC调查有所不同。首先，本次调查总结了MEC中现有的计算和通信模型，以促进理论分析，并为研究人员和从业人员提供快速参考。接下来，我们对MEC的联合无线电和计算资源分配进行全面的文献综述，这是本文的主题。本文中的文献综述将对现有的有关MEC的调查文献提供有价值的补充，这可以使研究界的读者受益，以建立对MEC系统的最新资源管理技术的系统理解。此外，我们从交流的角度确定并讨论了MEC中的一些研究挑战和机遇，并针对这些挑战和潜在机遇进行了阐述。另外，为弥合MEC的理论研究与实际实施之间的差距，然后将介绍MEC的最新标准化工作和使用场景。</p>
+<p>​        论文安排如下。在第二部分中，我们总结了基本的MEC模型，包括计算任务，通信，移动设备和MEC服务器，以此为基础开发了MEC延迟和能耗模型。接下来，在第三部分中将进行全面的综述，重点是针对不同类型的MEC系统（包括单用户，多用户系统以及多服务器MEC）的无线电和计算资源联合管理研究。随后，在第IV节中讨论了一组关键研究问题和未来方向，包括1）部署MEC系统，2）启用缓存的MEC，3）MEC的移动性管理，4）绿色MEC以及5）安全和隐私问题在MEC中。具体来说，我们分析每个研究问题的设计挑战，并提供几种潜在的研究方法。最后，在第五节中对MEC的标准化工作和应用进行了审查和讨论，随后在第六节中作了总结。为了便于参考，我们在表II中总结了经常在本文中使用的首字母缩写词的定义。</p>
+<h2 id="2-MEC计算和通信模型"><a href="#2-MEC计算和通信模型" class="headerlink" title="2. MEC计算和通信模型"></a>2. MEC计算和通信模型</h2><p>​        在本节中，将介绍典型MEC系统的关键计算/通信组件的系统模型。这些模型提供了将各种功能和操作抽象为优化问题并促进理论分析的机制，如以下各节所述。</p>
+<p>​        对于图3所示的MEC系统，关键组件包括移动设备（也称为最终用户，客户端，服务订户）和MEC服务器。  MEC服务器通常是小型数据中心，由云和电信运营商与最终用户紧密部署，可以与无线AP并置。通过网关，服务器通过Internet连接到数据中心。移动设备和服务器由空中接口隔开，在空中接口可以使用高级无线通信和联网技术建立可靠的无线链接。在以下小节中，我们将介绍针对MEC系统不同组件的模型，包括用于计算任务，无线通信信道和网络的模型，以及移动设备和MEC服务器的计算延迟和能耗模型。</p>
+<p><img src="/2020/07/19/edgeComputing-1/image-20200719163808312.png" alt="image-20200719163808312"></p>
+<h4 id="A-计算任务模型"><a href="#A-计算任务模型" class="headerlink" title="A.计算任务模型"></a>A.计算任务模型</h4><p>​        在计算任务的建模过程中，有各种参数起着至关重要的作用，包括等待时间，带宽利用率，上下文感知，通用性和可伸缩性[22]。尽管为任务开发准确的模型非常复杂，但是存在一些简单的模型，这些模型是合理的并且具有数学易处理性。在本小节中，我们介绍两个在MCC和MEC的现有文献中普遍使用的计算任务模型，分别对应于二进制和部分计算分流。</p>
+<p>​        1）<strong>二进制卸载的任务模型</strong>：高度集成或相对简单的任务无法分区，必须整体在移动设备上执行或卸载到MEC服务器，称为二进制卸载。这样的任务可以用三场符号A（L，τd，X）表示。该常用符号包含以下信息：任务输入数据大小L（以位为单位），完成期限τd（以秒为单位）以及计算工作量/强度X（以每位CPU周期为单位）。这些参数与应用程序的性质有关，可以通过任务分析器[56]，[57]进行估算。这三个参数的使用不仅捕获了移动应用程序的基本属性，例如计算和通信需求，而且还简化了对执行等待时间和能耗性能的简单评估（将在II-C节中进行分析）。</p>
+<p>​        要求任务A（L，τd，X）必须在硬期限τd之前完成。该模型也可以推广到软截止期限要求，该要求允许一小部分任务在τd之后完成[58]。在这种情况下，将执行1个单位任务输入数据所需的CPU周期数建模为随机变量X。具体来说，定义正整数x0当p为大于0远小于1的小数时满足Pr(X&gt;x0)&lt;=p，</p>
+]]></content>
+      <tags>
+        <tag>论文笔记</tag>
+        <tag>边缘计算</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>idea1</title>
+    <url>/2020/06/21/idea1/</url>
+    <content><![CDATA[<h2 id="基于负载均衡的个体服务质量约束副本放置算法"><a href="#基于负载均衡的个体服务质量约束副本放置算法" class="headerlink" title="基于负载均衡的个体服务质量约束副本放置算法"></a>基于负载均衡的个体服务质量约束副本放置算法</h2><p>解决问题：个体服务质量约束要满足的问题就是解决消息可以同时获得。个体服务质量约束中同一副本节点所服务的节点过多时可能造成的高并发问题。</p>
+<h3 id="1-符号"><a href="#1-符号" class="headerlink" title="1. 符号"></a>1. 符号</h3><h3 id="2-公式定义"><a href="#2-公式定义" class="headerlink" title="2. 公式定义"></a>2. 公式定义</h3><p>定义一：副本树</p>
+<p>定义二：</p>
+<p>定义三：</p>
+<p>定义四：</p>
+<p>定义五：</p>
+<h3 id="3-定义概念"><a href="#3-定义概念" class="headerlink" title="3. 定义概念"></a>3. 定义概念</h3><h3 id="根据QoS约束和创建开销形成副本树"><a href="#根据QoS约束和创建开销形成副本树" class="headerlink" title="根据QoS约束和创建开销形成副本树"></a>根据QoS约束和创建开销形成副本树</h3><p>给定各节点的网络拓扑图和服务器节点的位置。</p>
+<ol>
+<li>初始化副本节点节点集合 R = ｛s｝</li>
+<li>计算所有满足条件的非副本节点</li>
+</ol>
+<p>对于下面这样一个网络结构，A是服务器节点，要求的个体服务质量约束为2。</p>
+]]></content>
+      <tags>
+        <tag>想法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>paper3</title>
+    <url>/2020/06/19/paper3/</url>
+    <content><![CDATA[<blockquote>
+<p>论文名称：A security-aware data replica placement strategy based on fuzzy evaluation in the cloud</p>
+<p>翻译：云中基于模糊评估的安全感知数据副本放置策略</p>
+<p>作者：Wu Xiuguo</p>
+<p>发表时间：2018</p>
+<p>发表期刊：JOURNAL OF INTELLIGENT &amp; FUZZY SYSTEMS</p>
+<p>dio : 10.3233/JIFS-169584</p>
+<p>关键词：Cloud storage、replicas placements、security、fuzzy、 Qos</p>
+</blockquote>
+<h2 id="文章翻译"><a href="#文章翻译" class="headerlink" title="文章翻译"></a>文章翻译</h2><h4 id="摘要："><a href="#摘要：" class="headerlink" title="摘要："></a>摘要：</h4><p>通过将多个副本放在云中的不同数据中心上，复制技术是提高云数据可用性并减少响应时间的最有效措施之一。但是，传统的副本放置策略主要集中在性能改进上，例如减少传输时间，负载平衡等，而很少注意它们的安全存储，这不可避免地导致对副本正确访问产生新的安全风险。为了开发智能解决方案以增强云存储系统的性能，我们对候选数据中心进行了模糊综合评估，以副本放置方式评估其安全风险等级，从而提高了云存储系统的质量。首先，提出了一种用于副本放置的新型五维安全模型。然后，基于模糊集和熵权理论，设计并实现了一种具有安全意识的副本放置评估算法，以建立评估模型的多因素融合。通过将实验结果与不同策略的结果进行比较，可以看出，该策略的数据副本可用性概率高达85％，等待时间更短，具有较好的实用性。</p>
+<h4 id="1-介绍："><a href="#1-介绍：" class="headerlink" title="1. 介绍："></a>1. 介绍：</h4><p>近年来，许多科学应用产生了大量的数据，而先进技术和新设备的广泛应用，例如天气预报，EC，天文学等。这些数据通常可供世界各地的学者访问，以进行进一步的研究和应用。同时，结合开发云Web服务器，云存储技术已成为处理这些大数据的一种重要方法。通过将多份数据放置在不同的数据中心上，复制是云存储系统中用来减少访问等待时间和网络带宽利用率的一种常用的技术，从而增强系统可靠性和负载平衡，特别是对于需要大量数据集的应用科学和技术程序而言。副本的放置，选择和动态调度是副本管理研究领域中的三个主要主题。在我们以前的工作[6，7]中，我们提出了一种策略，可以帮助选择适合不同类型的云存储服务用户的最合适的复制存储位置，例如高可靠性要求，数据管理成本，服务时间和其他特殊服务要求。</p>
+<pre><code>但是，云存储系统中的数据复制技术开发存在许多问题。首先，数据副本仍面临着各种不同的数据完整性对待方式的问题，甚至云服务器提供商（CSP）也提供了比普通服务器更加可靠和强大的基础架构。 近年来，偶尔会出现很多这样的例子[5-8]。其次，一些CSP很少关注数据状态，只关心数据存储量。例如，由于存储空间或金钱原因，他们可能会丢弃尚未访问或很少访问的信息[9-11]。此外，安全性是亟待解决的问题，因为各种偶然原因将导致数据攻击或崩溃。总而言之，尽管数据复制技术是最小化数据中心之间的等待时间或距离的有效方法，但它并不能立即为可靠访问提供任何数据安全存储保证。以此方式，期望评估数据副本放置风险级别，以确保数据所有者将其数据正确存储在云中。不幸的是，当将副本放置在地理分布的数据中心上时，很少有研究人员很少关注数据安全性存储或安全性访问。当前，大多数CSP始终假设整个云存储环境和数据中心上的数据是安全可靠的，因此在实践中不适用。</code></pre><p>​        综上所述，数据副本安全存储和访问应引起足够的重视，并且必须设计有效的方法来代表云用户评估按需数据副本存储的安全性。在本文中，我们集中于数据存储布置安全性评估问题，该问题将模糊集和信息熵理论应用于从副本存储的云安全性条件出发的过程。</p>
+<p>​        本文的主要贡献包括：</p>
+<ol>
+<li>提出了一种五维复制品放置安全性评价指标体系； </li>
+<li>设计并实现基于模糊集和熵权理论的安全感知副本放置评估算法； </li>
+<li>使用分析和模拟评估副本放置的安全风险等级。</li>
+</ol>
+<p>本文的其余部分安排如下：</p>
+<ol>
+<li>第二节介绍了有关云中数据副本安全性的相关研究。</li>
+<li>第三节提出了副本放置安全性评估指标体系，并提出了基于模糊逻辑的候选数据中心安全性评估算法。</li>
+<li>第四节概述了仿真环境，并给出了仿真结果。</li>
+<li>第五节总结并提出了今后的研究方向。</li>
+</ol>
+<h4 id="2-相关介绍"><a href="#2-相关介绍" class="headerlink" title="2. 相关介绍"></a>2. 相关介绍</h4><p>近年来，复制是分布式网络领域的热点研究工作之一，对等网络，网格和云计算。在数据复制领域，有关数据安全性的大量研究工作已经完成。在这里，我们回顾一些相关技术，尤其是在云中基于模糊的安全评估。图1描述了在完整的云环境中的安全风险的复杂性，在该环境中，不同的安全要求部署了云模型，即私有云，公共云和混合云。可以看出，在最低层中，需要副本存储安全性。在中间层时，复制传输安全性用于保护数据访问期间的数据完整性。在上面的服务层，利用了应用程序的安全性，而在顶层，与第三方资源相关的安全性是必需的。</p>
+<p><img src="/2020/06/19/paper3/image-20200619234250636.png" alt="image-20200619234250636"></p>
+<p>​        同时，许多研究人员提出了基于模糊逻辑的不同数据副本放置策略，例如参考文献[12]。另一方面，参考文献[13]提出了一种使用多传感器数据融合技术的安全监控。但是，当前大多数技术都没有考虑到潜在攻击所带来的风险，这会导致云存储服务质量下降。</p>
+<p>​        此外，一些研究人员提出了在云中进行模糊审计数据完整性检查的方法，例如参考文献[14-17]，它们已取得了较好的效果。然而，据我们所知，没有一项工作为安全性评估提供新的解决方案，特别是针对数据副本存储位置[18，19]。参考文献[20]采用了信任模型的一些思想，提出了云中的信任矩阵。出于同样的原因，信任模型的思想不能直接应用于副本存储的评估中。同样，我们在以前的工作中主要关注的是为不同类型的云存储服务用户放置数据中心副本的方式，而没有考虑其安全性[7]。</p>
+<p>​        从上面提到的情况来看，数据副本的隐私安全风险仍然存在一些问题：</p>
+<ol>
+<li>与副本放置安全性相关的研究相对较少，在考虑最合适的存储位置时，结果几乎没有进行简单的讨论。  </li>
+<li>以上所有评估策略均未充分考虑副本安全风险的可能性。 </li>
+<li>到目前为止，尚未找到对数据副本的安全风险指数的评估。</li>
+</ol>
+<p>​        显然，非常有必要评估副本存储的安全级别，该级别不仅可以识别已识别的威胁，还可以识别潜在的风险。模糊评估是一种数学方法，可以根据某些标准提出属于定义的概念的可能性。本文提出了一种基于模糊逻辑的数据复制安全性评估算法来处理副本放置的模糊性或不确定性，该模糊性或不确定性与高度可靠的访问高度相关。</p>
+<h4 id="3-基于模糊的安全感知副本放置算法"><a href="#3-基于模糊的安全感知副本放置算法" class="headerlink" title="3. 基于模糊的安全感知副本放置算法"></a>3. 基于模糊的安全感知副本放置算法</h4><p>在本节中，提出了一种新的数据副本放置安全性评估算法，称为基于模糊逻辑（SRPF）的安全感知副本放置评估。并且该方法可以如图2所示。</p>
+<p><img src="/2020/06/19/paper3/image-20200619235143189.png" alt="image-20200619235143189"></p>
+<h5 id="3-1-步骤1：构建安全副本放置评估指标体系"><a href="#3-1-步骤1：构建安全副本放置评估指标体系" class="headerlink" title="3.1 步骤1：构建安全副本放置评估指标体系"></a>3.1 步骤1：构建安全副本放置评估指标体系</h5><p>有许多因素会影响数据副本存储的安全性。在本文中，我们提出了一个5维副本放置评估安全模型，用于解决存储安全，网络安全，访问控制安全，软件安全和硬件安全。此外，第三层（属性层）代表子目标的重要方面。如图3所示，最终建立了18个指标，这些指标全面覆盖了云平台中数据副本安全放置的主要因素。</p>
+<p><img src="/2020/06/19/paper3/image-20200619235347544.png" alt="image-20200619235347544"></p>
+<ul>
+<li><p><strong>存储安全性</strong>：很明显，副本的安全存储是支持云计算安全运行的基础。如果没有安全的存储技术措施，数据集副本将很容易泄漏，数据丢失，黑客攻击等。涉及存储安全性的主要参数包括：</p>
+<ol>
+<li>安全数据副本的传输</li>
+<li>安全的数据副本隔离</li>
+<li>数据副本加密技术</li>
+<li>安全的数据副本备份和还原</li>
+<li>数据副本移植</li>
+<li>数据副本销毁/删除</li>
+<li>数据副本分割。</li>
+</ol>
+</li>
+<li><p><strong>网络安全：</strong>所有数据副本都将通过网络从源数据中心传输到目标数据中心，因此网络安全在安全评估中非常重要。这涉及使用强大的网络流量加密技术，例如安全套接字层（SSL）和传输层安全性（TLS）。涉及网络安全的主要参数包括：</p>
+<ol>
+<li>端口安全保护；  </li>
+<li>防止网络入侵； </li>
+<li>网络安全审核。</li>
+</ol>
+</li>
+<li><p>访问控制安全性：云存储系统的基本服务应构建数据访问控制和数据传输的安全环境。涉及访问控制安全性的主要参数包括：</p>
+<ol>
+<li>用户身份认证； </li>
+<li>主机访问控制。</li>
+</ol>
+</li>
+<li><p>软件安全性：复制品放置的安全性首先应保证云中的软件安全性。涉及访问控制安全性的主要参数包括：</p>
+<ol>
+<li>应用程序资源控制； </li>
+<li>接口和API保护；  </li>
+<li>防病毒保护； </li>
+<li>软件更新。</li>
+</ol>
+</li>
+<li><p>硬件安全性：硬件安全性是与数据副本的可靠性相关的重要因素之一。涉及访问控制安全性的主要参数包括：</p>
+<ol>
+<li>硬件配置和</li>
+<li>监视保护。</li>
+</ol>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>论文笔记</category>
+      </categories>
+      <tags>
+        <tag>论文笔记</tag>
+        <tag>副本放置</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>20200617</title>
+    <url>/2020/06/17/20200617/</url>
+    <content><![CDATA[<div id="hexo-blog-encrypt" data-wpm="Oh, this is an invalid password. Check and try again, please." data-whm="OOPS, these decrypted content may changed, but you can still have a look.">
+  <div class="hbe-input-container">
+  <input type="password" id="hbePass" placeholder="" />
+    <label for="hbePass">Hey, password is required here.</label>
+    <div class="bottom-line"></div>
+  </div>
+  <script id="hbeData" type="hbeData" data-hmacdigest="29f3ff4bafacc04c3e798b8e2786ec5e0ab7d98fc51d380d024b76f1ce9a30e1">5ade4fd02913b35004459dcfbe3bfb63</script>
+</div>
+<script src="/lib/blog-encrypt.js"></script><link href="/css/blog-encrypt.css" rel="stylesheet" type="text/css">]]></content>
+      <categories>
+        <category>状态记录</category>
+      </categories>
+      <tags>
+        <tag>状态</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>glowwormAlg1</title>
+    <url>/2020/06/17/glowwormAlg1/</url>
+    <content><![CDATA[<h2 id="内容分发网路"><a href="#内容分发网路" class="headerlink" title="内容分发网路"></a>内容分发网路</h2><p>使用CDN的优势：</p>
+<ol>
+<li>更低的访问延迟</li>
+<li>较高的传输速率</li>
+<li></li>
+</ol>
+<h3 id="传统内容传送方式的弊端："><a href="#传统内容传送方式的弊端：" class="headerlink" title="传统内容传送方式的弊端："></a>传统内容传送方式的弊端：</h3><ol>
+<li>服务器过远导致服务延迟大</li>
+<li>原始服务器负载过大导致服务器性能不足</li>
+<li>中间链路复杂、拥塞状态动态变化导致可靠性差</li>
+<li>原始服务器的出口带宽决定这可以服务的最大请求数，导致系统的可扩展性差</li>
+<li>无法处理移动性和快速扩展的用户需求，从而导致用户体验质量差</li>
+</ol>
+<h3 id="传统内容分发网路："><a href="#传统内容分发网路：" class="headerlink" title="传统内容分发网路："></a>传统内容分发网路：</h3><ol>
+<li>基本思想：部署更多的专用服务器到靠近终端用户的区域，并将内容复制到不同区域，在底层的IP网络上构建起一层覆盖网络</li>
+<li>模块组成：</li>
+</ol>
+<ul>
+<li>内容存储模块<ul>
+<li>原始服务器和边缘服务器节点</li>
+</ul>
+</li>
+<li>请求路由模块<ul>
+<li>该模块将⽤户请求重定向到边缘服务器，并和内容复制模块交互获取最新内容⽬录</li>
+</ul>
+</li>
+<li>内容复制模块<ul>
+<li>把内容从原始服务器复制到边缘服务器，并确保原始服务器与边缘服务器之间内容的⼀致性</li>
+</ul>
+</li>
+<li>审计模块<ul>
+<li>记录⽤户的访问⽇志以及服务器的使⽤情况，辅助⽣成流量报表以及基于使⽤量的系统账单</li>
+</ul>
+</li>
+</ul>
+<ol start="3">
+<li>副本放置策略<ul>
+<li>传统的内容分发⽹络主要采⽤被动机制，基于⽤户历史请求记录利⽤线性回归⽅法，预测内容的流⾏度，指导内容的缓存和复制，或者分析内容相关性以及访问频率对内容进⾏聚类，以类为单位进⾏内容复制</li>
+</ul>
+</li>
+<li>CDNs 操作可分为三个关键阶段：<ul>
+<li>(1)内容放置，将源服务器的内容复制到副本服务器；</li>
+<li>(2)请求路由，其中终端用户请求被重定向到合适的副本服务器；</li>
+<li>(3)内容分发，从副本服务器检索内容并将其发送给终端用户。</li>
+<li><img src="/2020/06/17/glowwormAlg1/image-20200811175256689.png" alt="image-20200811175256689"></li>
+</ul>
+</li>
+</ol>
+<h3 id="网络服务提供商运营的内容分发网络"><a href="#网络服务提供商运营的内容分发网络" class="headerlink" title="网络服务提供商运营的内容分发网络"></a>网络服务提供商运营的内容分发网络</h3><ol>
+<li>传统CDN网络的缺点：<ul>
+<li>CDN 服务提供商通常基于有限的⽹络层信息设计管理机制，这将对⽹络服务提供商（Internet Service Provider , ISP）的资源利⽤带来⼀些负⾯影响</li>
+<li>由于 CDN 中⽹络内容的放置以及⽤户请求重定向策略没有考虑底层⽹络拓扑以及链路的状态，有可能引起⽹络拥塞，或者⼤量的请求需要跨越多个 ISP 获取内容，导致⽹络运营提供商需要⽀付更多的跨 ISP 的流量开销。</li>
+</ul>
+</li>
+<li>ISP的优势<ul>
+<li>相对于 CDN 提供商，ISP 运营商能够获取整个⽹络使⽤率的全局信息，制定与底层⽹络更加友好的内容放置以及路由策略，提升整个系统的利⽤率。</li>
+</ul>
+</li>
+<li>ISP和CDN联合<ul>
+<li>针对传统的 CDN 服务提供商和 ISP 运营商被作为两个独⽴的实体⽽导致系统性能下降的问题，⼀系列的研究⼯作围绕着两者的联合优化展开</li>
+</ul>
+</li>
+</ol>
+<h3 id="内容提供商运营的内容分发网路"><a href="#内容提供商运营的内容分发网路" class="headerlink" title="内容提供商运营的内容分发网路"></a>内容提供商运营的内容分发网路</h3><ul>
+<li><p>内容提供商运行CDN的原因</p>
+<ul>
+<li>由于CDN中很多数据即是上下文相关的又是与用户相关的（户不再仅仅是内容的消耗者，同时是内容的产⽣与分发的参与者）。</li>
+</ul>
+</li>
+<li><p>⼀些内容提供商，主要是多媒体内容提供商逐步开始⾃建内容分发⽹络，实现差异化内容分发。</p>
+</li>
+</ul>
+<h3 id="基于云计算的内容分发网络"><a href="#基于云计算的内容分发网络" class="headerlink" title="基于云计算的内容分发网络"></a>基于云计算的内容分发网络</h3><p>优势：</p>
+<pre><code>- 与传统CDN相比，CCDN节省大量运营成本，是当前内容分发的主要措施。
+- CCDNs 提供了一种灵活的解决方案，允许内容提供商根据覆盖范围，预算和 QoS 偏好智能地选择和放置内容到一个或多个云存储服务器上[24]。使用 CCDNs，内容提供商可以更灵活地管理瞬间拥挤等情况，从而不必投资基础架构开发，节约了成本。
+- 弹性强，一个弹性平台，能够动态轻松地上下调整容量
+- 低成本，无需部署 CDNs 基础设施
+- 可扩展性强，利用公共云的功能，在需求高峰期间进行扩展
+- 具有 QoS 驱动的性能管理</code></pre><p>可以帮助内容提供商应对突然的网络带宽拥挤以及可预期的增长需求，与将大量投资花在建立自己拥有的内容分发平台或者租用类似 Akamai 这样的现有 CDNs 相比是十分划算的。</p>
+<p>通过资源虚拟化技术，能够快捷、按需提供资源（存储资源、计算资源、⽹络资源）给⽤户，为需要分发视频内容，但是⽆法承受搭建⽹络基础设施开销的个性化、⼩型视频服务提供商提供了机会。</p>
+<p>据思科预测[76]，云计算流量在 2018 年将达到 6.5 zettabytes</p>
+<p><img src="/2020/06/17/glowwormAlg1/image-20200811215516101.png" alt="image-20200811215516101"></p>
+<p>副本放置的标准：</p>
+<ul>
+<li>运营成本<ul>
+<li>云中消耗资源的成本：存储内容的成本、检索、分发内容的带宽成本</li>
+</ul>
+</li>
+<li>QOS<ul>
+<li>终端用户的延迟</li>
+<li>端到端的延迟</li>
+<li>物理距离</li>
+<li>延迟抖动</li>
+<li>跳数</li>
+<li>往返时间</li>
+</ul>
+</li>
+<li>资源利用<ul>
+<li>最大限度的利用已经租赁的资源</li>
+</ul>
+</li>
+<li>资源配置<ul>
+<li>租赁或释放资源以满足终端用户需求的变化</li>
+</ul>
+</li>
+</ul>
+<h3 id="以信息为中心的内容分发网络"><a href="#以信息为中心的内容分发网络" class="headerlink" title="以信息为中心的内容分发网络"></a>以信息为中心的内容分发网络</h3><p>以主机为中⼼的 IP ⽹络架构只关注通信双⽅的 IP 地址，忽略⽹络中间传输的内容，不同请求⽅即使请求相同的内容也需要发送⽅重新进⾏发送，导致⽹络中传输⼤量的冗余内容。</p>
+<p>新的以内容为中⼼的⽹络架构（Information-Centric Networking，ICN）[80] 致⼒于把上层⽹络⽤途的转变映射到底层⽹络架构的设计上，把内容⽽不是主机作为关注的重点。</p>
+<h2 id="边缘网络的内容分发"><a href="#边缘网络的内容分发" class="headerlink" title="边缘网络的内容分发"></a>边缘网络的内容分发</h2><p><strong>即将到来的 5G 系统提出把内容推送到更靠近⽤户的地⽅，追求将端到端延迟减少到 1 毫秒以内[90]。</strong></p>
+<h3 id="基于对等网络资源的内容分发"><a href="#基于对等网络资源的内容分发" class="headerlink" title="基于对等网络资源的内容分发"></a>基于对等网络资源的内容分发</h3><p>通过将媒体流分成⽚段，利⽤类似⽂件分享的思想传输视频⽂件，⼤量的视频直播系统（CoolStreaming[97]，PPLive[98]，PPStream[99]，UUSee[100]，QQLive[101]，Zattoo[102]）以及点播系统（P2Cast[103]，Peer-Streaming[104]，DirectStream[105]）被开发出来。</p>
+<p>Yin 等[106] 提出利⽤ CDN 服务器和边缘对等⽹络节点的混合模式进⾏内容分发，保证⽤户体验的同时提升系统的可扩展性。</p>
+<h3 id="基于蜂窝网络资源的内容分发"><a href="#基于蜂窝网络资源的内容分发" class="headerlink" title="基于蜂窝网络资源的内容分发"></a>基于蜂窝网络资源的内容分发</h3><p>为了应对移动流量的爆炸增长[108]，移动⽹络运营商探索通过部署更多的⼩型蜂窝基站（Small Cellular Base Stations，SBSs），并在⼩基站上缓存内容以减少⾼峰时期⾻⼲⽹络负载[23,25]。</p>
+<h3 id="基于-Wi-Fi-热点资源的内容分发"><a href="#基于-Wi-Fi-热点资源的内容分发" class="headerlink" title="基于 Wi-Fi 热点资源的内容分发"></a>基于 Wi-Fi 热点资源的内容分发</h3><p>为了提⾼视频传输性能，降低 CDN 服务器压⼒，⼯业界和学术界开始探索利⽤海量的⽤户边缘资源协助内容分发的可⾏性。</p>
+<p>国内知名 CDN 服务提供商 ChinaCache[121] 与视频内容提供商优酷[17] 合作，建⽴了⼀个全新的 CDN ⽣态系统[122]。其中，优酷发布的优酷路由宝[18] ⽤来缓存内容，⽽ ChinaCache 将流量⼯程等 CDN 领域加速策略嵌⼊到路由宝，把路由宝转变为靠近⽤户的内容加速节点。</p>
+<h2 id="内容预取相关工作"><a href="#内容预取相关工作" class="headerlink" title="内容预取相关工作"></a>内容预取相关工作</h2><p>为了保证服务质量，内容提供商通常需要根据峰值流量租赁带宽[72]，但是绝⼤多数时间，⽤户请求量远远低于峰值流量，因此，造成极⼤的带宽资源浪费。预取技术应运⽽⽣，通过在⽤户实际请求内容之前，提前预取内容，转移峰值流量。</p>
+<h3 id="基于流行度的内容预取"><a href="#基于流行度的内容预取" class="headerlink" title="基于流行度的内容预取"></a>基于流行度的内容预取</h3><p>把最流行的一定数量的视频数据先进行预取</p>
+<h3 id="基于社交关系的内容预取"><a href="#基于社交关系的内容预取" class="headerlink" title="基于社交关系的内容预取"></a>基于社交关系的内容预取</h3><p>根据用户的社交关系，提前对于用户有关的数据进行预取</p>
+<h3 id="基于用户行为的内容预取"><a href="#基于用户行为的内容预取" class="headerlink" title="基于用户行为的内容预取"></a>基于用户行为的内容预取</h3>]]></content>
+  </entry>
+  <entry>
+    <title>文献阅读笔记-基于萤火虫优化的副本放置方法</title>
+    <url>/2020/06/17/paper2/</url>
+    <content><![CDATA[<blockquote>
+<p>论文名称：基于萤火虫优化的副本放置方法</p>
+<p>作者：李 君，侯孟书</p>
+<p>发表时间：2019.2</p>
+<p>发表期刊：计算机应用研究</p>
+<p>dio : 10.19734/j.issn.1001-3695.2017.09.0948</p>
+<p>关键词：副本放置、萤火虫优化算法、云计算、分布式存储</p>
+</blockquote>
+<h3 id="文章摘要"><a href="#文章摘要" class="headerlink" title="文章摘要"></a>文章摘要</h3><ul>
+<li>针对问题：副本放置策略中存在的副本访问开销大的问题</li>
+<li>解决办法：考虑副本放置对用户访问性能的影响，对其建立数学模型，计算萤火虫位置的适应度函数，并朝着荧光素值最大即最优值移动，进而得到合适的副本放置节点。</li>
+<li>实验结论：该算法能够选择合适的副本放置节点，具有较好的收敛性，并有效降低了存储系统的副本访问开销。</li>
+</ul>
+<h3 id="萤火虫算法"><a href="#萤火虫算法" class="headerlink" title="萤火虫算法"></a>萤火虫算法</h3><p>​        萤火虫优化算法是一种基于群体智能的算法，其基本思想是通过模拟自然界中的萤火虫发光行为来搜索周围发光更亮的同伴，逐渐朝着区域内较优的位置移动，从而聚集到最亮的位置，实现搜索最优解的功能。</p>
+<ol>
+<li>初始化萤火虫种族：<ul>
+<li>N：分布式系统节点总数</li>
+<li>R：副本数，也是每只萤火虫的维数</li>
+<li>iter：迭代次数</li>
+</ul>
+</li>
+<li>计算每只萤火虫对应解的适应度、荧光素值</li>
+</ol>
+]]></content>
+      <categories>
+        <category>论文笔记</category>
+      </categories>
+      <tags>
+        <tag>论文笔记</tag>
+        <tag>副本放置</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>git</title>
+    <url>/2020/06/14/git/</url>
+    <content><![CDATA[<h2 id="git使用"><a href="#git使用" class="headerlink" title="git使用"></a>git使用</h2><h3 id="1-安装git"><a href="#1-安装git" class="headerlink" title="1. 安装git"></a>1. 安装git</h3><ul>
+<li><p>设置</p>
+<ol>
+<li>安装成功后，打开软件git bash，进行用户名和邮箱的配置</li>
+<li>配置用户名： git config –global user.name “name”</li>
+<li>配置邮箱：git config –global user.email “<a href="mailto:123@qq.com">123@qq.com</a>“</li>
+</ol>
+</li>
+<li><p>版本库</p>
+<ol>
+<li><p>版本库又名仓库，可以理解成一个仓库</p>
+</li>
+<li><p>创建版本库：先创建一个文件夹用作未仓库，再按图片执行</p>
+<p><img src="/2020/06/14/git/Image.png" alt="Image"></p>
+</li>
+<li><p>添加文件到版本库：先在仓库中创建一个文件，再在git bash中进行操作，操作如图</p>
+<p><img src="/2020/06/14/git/Image-1592145349997.png" alt="Image"></p>
+</li>
+</ol>
+</li>
+</ul>
+<h3 id="2-时光穿梭机（各版本间切换）"><a href="#2-时光穿梭机（各版本间切换）" class="headerlink" title="2. 时光穿梭机（各版本间切换）"></a>2. 时光穿梭机（各版本间切换）</h3><ul>
+<li><p>git status:时刻掌握仓库的当前状态</p>
+</li>
+<li><p>git diff:查看修改的内容</p>
+</li>
+<li><p>git log:可以看到从最近到最远的提交日志（简化显示：git log –pretty==oneline）</p>
+</li>
+<li><p>版本回退：</p>
+<ul>
+<li>回退到上一个版本：git reset –hard HEAD^</li>
+<li>回退到上上个版本：git reset –hard HEAD^^</li>
+<li>回退到上100个版本：git reset –hard HEAD~100</li>
+<li>回退到具体版本：git reset –hard 具体版本号</li>
+</ul>
+</li>
+<li><p>git reflog:记录每一次命令</p>
+</li>
+<li><p>git checkout – fileName:撤销操作，如果当前文件没有add回退到版本库中版本，如果已经add回退到缓存区版本</p>
+<p><img src="/2020/06/14/git/Image-1592145482351.png" alt="Image"></p>
+</li>
+</ul>
+<h3 id="3-上传文件到github"><a href="#3-上传文件到github" class="headerlink" title="3.上传文件到github"></a>3.上传文件到github</h3><ul>
+<li><p>创建SSH Key：输入ssh-keygen -t rsa -C “<a href="mailto:737225512@qq.com">737225512@qq.com</a>“，记录.ssh目录位置/c/Users/zhanghaha/.ssh并切换到该目录，在这个目录下有两个文件，一个是私钥一个是公钥，输入命令cat id_rsa.hub查看公钥并把公钥记录下来</p>
+<p><img src="/2020/06/14/git/Image-1592145523365.png" alt="Image"></p>
+</li>
+<li><p>连接github：首先登录github官网（注意要继续进行下面的操作需要先验证通过邮箱），点击右上角进入setting，再进入SSH and GPG keys点击new SSH key把公钥添加进入，在git bash中输入ssh -T <a href="mailto:git@github.com">git@github.com</a> 进行验证</p>
+<p><img src="/2020/06/14/git/Image-1592145577235.png" alt="Image"></p>
+</li>
+<li><p>创建远程仓库：</p>
+<p><img src="/2020/06/14/git/Image-1592145698801.png" alt="Image"></p>
+</li>
+<li><p>关联远程仓库：首先查找远程仓库地址，在git bash中输入：git remote add origin <a href="mailto:git@github.com">git@github.com</a>:HuchiHuchi/huchi_git.git，没有错误就关联成功。（我在做的时候出现错误“fatal: not a git repository (or any of the parent directories): .git”，重新git init初始化一下再做就好了）</p>
+<p><img src="/2020/06/14/git/Image-1592145718429.png" alt="Image"></p>
+<ol>
+<li><p>删除关联：git remote rm origin</p>
+</li>
+<li><p>推送本地库内容到远程库： git push origin master</p>
+<p><img src="/2020/06/14/git/Image-1592145770634.png" alt="Image"></p>
+</li>
+<li><p>把远程仓库的内容拉到本地仓库：git pull origin master –allow-unrelated-histories</p>
+<p><img src="/2020/06/14/git/Image-1592145775893.png" alt="Image"></p>
+</li>
+<li><p>真正开发步骤：先有远程库，把远程库克隆到本地（输入：git clone 远程库地址），在本地写好再add、commit、推送上去</p>
+</li>
+<li><p>注意：在往远程仓库推送文件时，如果有不想推送的文件，需要先在本地仓库创建一个名叫.gitignore的文件，把不推送的文件名写到这个文件中。</p>
+</li>
+</ol>
+</li>
+</ul>
+<h3 id="4-分支"><a href="#4-分支" class="headerlink" title="4. 分支"></a>4. 分支</h3><ul>
+<li>创建分支：git branch 分支名</li>
+<li>查看当前在哪个分支：git branch</li>
+<li>切换分支：git checkout 分支名</li>
+<li>创建于切换同时进行：git checkout -b 分支名</li>
+<li>合并到master分支：git merge 分支名</li>
+<li>远程子分支创建于提交：第一次提交时执行这个代码”git push –set-upstream origin 分支名“，这个代码可以创建并提交分支，有了这个分支以后可以直接使用”git push origin 分支名“提交</li>
+<li>注意：在远程仓库克隆下来的时候指挥克隆master分支，在本地要继续开发子分支需要先在本地创建一个名字相同的子分支，再切换到这个子分支执行git pull origin 分支名，把子分支拉下来。在第一次拉的时候会出现连接不上的情况，需要用push先进行连接。</li>
+<li>解决冲突：当子分支和主分支都进行了修改而且子分支有与主分支进行合并了，在该文件的主分支查看时会都显示出来然后自己在文件内解决。</li>
+<li>查看分支合并图：git log –graph</li>
+</ul>
+<h3 id="5-标签管理"><a href="#5-标签管理" class="headerlink" title="5. 标签管理"></a>5. 标签管理</h3><ul>
+<li><p>说明：根据版本划分标签号，可以设定标签号，任意跳转到其他标签 </p>
+</li>
+<li><p>定义标签：git tag 标签名</p>
+</li>
+<li><p>查看所有标签：git tag</p>
+</li>
+<li><p>指定commd id定义标签：git tag 标签名 commitID</p>
+</li>
+<li><p>制定标签信息：git tag -a 标签名 -m “标签信息”</p>
+</li>
+<li><p>切换到指定标签：git checkout 标签名</p>
+</li>
+<li><p>查看说明文字：git show 标签名</p>
+</li>
+<li><p>删除标签：git tag id 标签名</p>
+</li>
+<li><p>推送标签到远程：git push origin 标签名</p>
+</li>
+<li><p>一次性推送全部还没推送的本地标签：git push origin –tags</p>
+</li>
+<li><p>删除已经推送到远程的标签：先在本地删除“git tag -d 标签名”再从远程删除”git push origin :refs/tags/标签名”</p>
+</li>
+</ul>
+<blockquote>
+<p>正确更新步骤：<br>git init //初始化仓库</p>
+<p>git add .(文件name) //添加文件到本地仓库</p>
+<p>git commit -m “first commit” //添加文件描述信息</p>
+<p>git remote add origin + 远程仓库地址 //链接远程仓库，创建主分支</p>
+<p>git pull origin master // 把本地仓库的变化连接到远程仓库主分支</p>
+<p>git push -u origin master //把本地仓库的文件推送到远程仓库</p>
+</blockquote>
+<p>参考：</p>
+<p><a href="https://blog.csdn.net/gddxz_zhouhao/article/details/53070317" target="_blank" rel="noopener">更新失败解决办法</a></p>
+<p><a href="https://blog.csdn.net/kilotwo/article/details/85564154" target="_blank" rel="noopener">解决git push远程仓库 时 Updates were rejected because the remote contains work that you do问题</a></p>
+]]></content>
+      <categories>
+        <category>工具</category>
+      </categories>
+      <tags>
+        <tag>git</tag>
+        <tag>效率</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>搜索技巧</title>
+    <url>/2020/06/14/SearchSkill/</url>
+    <content><![CDATA[<h2 id="搜索技巧"><a href="#搜索技巧" class="headerlink" title="搜索技巧"></a>搜索技巧</h2><h3 id="1-排除关键词"><a href="#1-排除关键词" class="headerlink" title="1. 排除关键词"></a>1. 排除关键词</h3><ul>
+<li><p>格式：减号 + 关键词</p>
+</li>
+<li><p>功能：排除一些不想要的关键词</p>
+</li>
+<li><p>举例：</p>
+<p>正常搜锤子：</p>
+<p><img src="/2020/06/14/SearchSkill/image-20200614093031191.png" alt="image-20200614093031191"></p>
+<p>排除关键词后：</p>
+<p><img src="/2020/06/14/SearchSkill/image-20200614093245905.png" alt="image-20200614093245905"></p>
+</li>
+</ul>
+<h3 id="2-精确搜索"><a href="#2-精确搜索" class="headerlink" title="2.  精确搜索"></a>2.  精确搜索</h3><ul>
+<li><p>给关键词加引号</p>
+</li>
+<li><p>只搜索引号里的词</p>
+<p>正常搜：</p>
+<p><img src="/2020/06/14/SearchSkill/image-20200614093628281.png" alt="image-20200614093628281"></p>
+<p>指定关键词后：</p>
+<p><img src="/2020/06/14/SearchSkill/image-20200614093613998.png" alt="image-20200614093613998"></p>
+</li>
+</ul>
+<h3 id="3-指定网站内搜索"><a href="#3-指定网站内搜索" class="headerlink" title="3. 指定网站内搜索"></a>3. 指定网站内搜索</h3><ul>
+<li><p>格式：site：域名 + 空格 + 关键词</p>
+</li>
+<li><p>功能：在指定网站内搜索</p>
+</li>
+<li><p>举例：</p>
+<p><img src="/2020/06/14/SearchSkill/image-20200614094440834.png" alt="image-20200614094440834"></p>
+</li>
+</ul>
+<h3 id="4-指定文件格式"><a href="#4-指定文件格式" class="headerlink" title="4. 指定文件格式"></a>4. 指定文件格式</h3><ul>
+<li><p>格式：filetype:文件格式 + 空格 + 关键词</p>
+</li>
+<li><p>功能：搜索指定文件格式的内容（用百度搜索到的都是百度文库里面的）</p>
+</li>
+<li><p>举例：</p>
+<p><img src="/2020/06/14/SearchSkill/image-20200614095033951.png" alt="image-20200614095033951"></p>
+</li>
+</ul>
+<h3 id="5-指定标题搜索"><a href="#5-指定标题搜索" class="headerlink" title="5.指定标题搜索"></a>5.指定标题搜索</h3><ul>
+<li><p>格式： intitle:关键词</p>
+</li>
+<li><p>搜索的关键词必须出现在标题里</p>
+</li>
+<li><p>举例：</p>
+<p><img src="/2020/06/14/SearchSkill/image-20200614095539372.png" alt="image-20200614095539372"></p>
+</li>
+</ul>
+<h3 id="6-指定范围搜索"><a href="#6-指定范围搜索" class="headerlink" title="6. 指定范围搜索"></a>6. 指定范围搜索</h3><ul>
+<li>方法一：intext:关键词<ul>
+<li>在正文中包含关键词</li>
+</ul>
+</li>
+<li>方法二：allintext:关键词一 关键词二  …<ul>
+<li>在正文包含多个关键词的</li>
+</ul>
+</li>
+<li>方法三：inurl:关键词<ul>
+<li>在url中包含指定内容</li>
+</ul>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>工具</category>
+      </categories>
+      <tags>
+        <tag>效率</tag>
+        <tag>查找资料</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>搜索算法3-启发式搜索</title>
+    <url>/2020/06/13/searchAlg3/</url>
+    <content><![CDATA[<h2 id="启发式搜索"><a href="#启发式搜索" class="headerlink" title="启发式搜索"></a>启发式搜索</h2><p>启发式搜索可以根据特定的问题动态调用操作算子。利用知识来引导搜索，达到减少搜索范围降低问题复杂度的目的。通过使用启发信息来决定搜索方向，如果启发信息强度过大有可能找不到最优解，而如果启发信息强度过小又会加大工作量，最坏情况可能会变成盲目搜索。最理想的情况是在保证找到最佳解的情况下，尽可能减少搜索范围，提高搜索效率。</p>
+<h3 id="基本思想"><a href="#基本思想" class="headerlink" title="基本思想"></a>基本思想</h3><p>通过定义启发函数对每次搜索的节点计算启发函数值，通过启发函数值决定下一步的搜索方向。</p>
+<p>流程图：</p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614160234874.png" alt="image-20200614160234874"></p>
+<h3 id="启发信息分类"><a href="#启发信息分类" class="headerlink" title="启发信息分类"></a>启发信息分类</h3><ol>
+<li>陈述性启发信息</li>
+<li>过程性启发信息</li>
+<li>控制性启发信息</li>
+</ol>
+<h3 id="扩展节点类型"><a href="#扩展节点类型" class="headerlink" title="扩展节点类型"></a>扩展节点类型</h3><ol>
+<li>父节点直接生成的子节点（即open和close表中都无此节点）—mk</li>
+<li>该子节点已被生成（即子节点已在open表中）—mj</li>
+<li>该子节点已被扩展过（即子节点已在close表中）—ml</li>
+</ol>
+<p><img src="/2020/06/13/searchAlg3/image-20200614162335405.png" alt="image-20200614162335405"></p>
+<h3 id="贪婪最佳优先搜索"><a href="#贪婪最佳优先搜索" class="headerlink" title="贪婪最佳优先搜索"></a>贪婪最佳优先搜索</h3><p><strong>思想：</strong></p>
+<p>​        在每次扩展节点时选择离目标节点最近的点进行扩展，理由是这样可以很快找到解。</p>
+<p><strong>启发函数：</strong></p>
+<p>​        贪婪最佳优先搜索的启发函数是当前节点到目标节点的路径代价估计值。</p>
+<p>​        f(n) = h(n)</p>
+<p><strong>举例： 应用贪婪最佳优先搜索算法解决罗马尼亚问题</strong></p>
+<blockquote>
+<p><strong>罗马尼亚问题：</strong></p>
+<p>罗马尼亚地图：</p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614162849883.png" alt="image-20200614162849883"></p>
+<p>问题：搜索寻找从Arad到Bucharest的路</p>
+</blockquote>
+<p>此题中启发式为当前节点到Bucharest之间的举例，每个城市到Bucharest的直线距离如下图所示：</p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614163058237.png" alt="image-20200614163058237"></p>
+<p>解题过程中每次都在相连接的点中华寻找离Bucharest最近的点进行扩展。扩展过程：</p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614163218303.png" alt="image-20200614163218303"></p>
+<p><strong>说明：</strong></p>
+<p>​        本算法的启发函数并不好，在每次都只考虑离目标最近的进行扩展。可能导致算法死循环。在最坏的情况下，算法的时间复杂度和空间复杂度都是O（b的m次幂），其中m是搜索空间的最大深度。</p>
+<h3 id="A算法"><a href="#A算法" class="headerlink" title="A算法"></a>A算法</h3><p><strong>启发函数：</strong></p>
+<ul>
+<li><em>f</em>(<em>n</em>) = <em>g</em>(<em>n</em>) + <em>h</em>(<em>n</em>)</li>
+<li>g(n)：从初始节点到n节点的耗散值</li>
+<li>h(n)：n节点到目标节点的路径代价估计值。</li>
+</ul>
+<blockquote>
+<p> 在进行扩展时对三类节点的解决方案：</p>
+<ol>
+<li>如果扩展的节点从未被生成过，把m节点加入OPEN表中等待扩展</li>
+<li>如果扩展的节点已经被扩展过并且其自身没有进行了扩展，比较本次生成的启发函数值与其原有的启发函数值，如果本次的启发函数值较小就更新其扩展函数值。</li>
+<li>如果扩展的节点已经被扩展过并且其自身又已经进行了扩展，先比较本次生成的启发函数值与其原有的启发函数值，如果本次的启发函数值较小就更新其扩展函数值。然后再把这个节点加入OPEN表重新扩展。</li>
+</ol>
+</blockquote>
+<p>算法伪代码：</p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614164927833.png" alt="image-20200614164927833"></p>
+<p><strong>举例：八数码问题</strong></p>
+<blockquote>
+<p>八数码问题：</p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614165029115.png" alt="image-20200614165029115"></p>
+</blockquote>
+<p>解题流程：</p>
+<ol>
+<li>定义启发函数：<ul>
+<li><em>f</em>(<em>n</em>) = <em>g</em>(<em>n</em>) + <em>h</em>(<em>n</em>)</li>
+<li><em>g</em>(<em>n</em>)为从初始节点到当前节点的耗散值</li>
+<li><em>h</em>(<em>n</em>)为当前节点“不在位”的将牌数</li>
+</ul>
+</li>
+<li>扩展流程：</li>
+</ol>
+<p><img src="/2020/06/13/searchAlg3/image-20200614165040831.png" alt="image-20200614165040831"></p>
+<h3 id="Astar算法"><a href="#Astar算法" class="headerlink" title="Astar算法"></a>Astar算法</h3><p>在A算法的基础上，如果A算法中的如果满足条件： <em>h</em>(<em>n</em>)≤h<strong><strong><em>(n)，其中h</em></strong></strong>(n)代表从节点n到目标节点的真实耗散值。满足这个条件的A算法就是Astar算法。</p>
+<p>h(n)在满足条件的情况下越接近h*(n)，算法的效果越好。（就是启发函数值越大启发信息的作用越大，反之启发函数值越小就越接近盲目搜索）</p>
+<p><strong>对h的评价方法：</strong></p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614170658588.png" alt="image-20200614170658588"></p>
+<p><strong>Astar算法的复杂度：</strong></p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614170818559.png" alt="image-20200614170818559"></p>
+<p><strong>定理：</strong></p>
+<ol>
+<li>对有限图，如果从初始节点s到目标节点t有路径存在，则A算法一定能成功结束。</li>
+<li>对无限图，如果从初始节点s到目标节点t有路径存在，则Astar算法一定能成功结束。</li>
+<li>如果从初始节点s到目标节点t有路径存在，则Astar算法一定能找到最佳解结束。</li>
+<li>如果对于同一个问题有两种Astar算法A1,A2，启发函数分别为h1(n),h2(n)，如果对于所有非目标节点h2(n)&gt;h1(n)，则A1扩展的节点数大于A2扩展的节点数。</li>
+</ol>
+<p><strong>举例： 用Astar解决罗马尼亚问题</strong></p>
+<p>算法流程如图：</p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614172455639.png" alt="image-20200614172455639"></p>
+<h3 id="对Astar的改进"><a href="#对Astar的改进" class="headerlink" title="对Astar的改进"></a>对Astar的改进</h3><p><strong>Astar存在的问题：</strong></p>
+<ul>
+<li>在扩展节点时如果新生成的节点已经被扩展过并且有孩子，这时新节点需要重新加入OPEN表中扩展，会导致搜索效率下降</li>
+</ul>
+<p><strong>出现问题的原因：</strong></p>
+<ul>
+<li>在扩展中，并没有找到从初始节点到当前节点的最短路径</li>
+</ul>
+<p><strong>解决途径：</strong></p>
+<ol>
+<li>对h加以限制：能否对h增加适当的限制，使得第一次扩展一个节点时，就找到了从s到该节点的最短路径。</li>
+<li>对算法加以改进：能否对算法进行改进，避免或减少节点的多次扩展。</li>
+</ol>
+<blockquote>
+<p> 改进需要满足的条件：</p>
+<ol>
+<li>可采纳性不变</li>
+<li>不多扩展节点</li>
+<li>不增加算法的复杂性</li>
+</ol>
+</blockquote>
+<p><strong>解决办法：</strong></p>
+<p>h的单调性：</p>
+<p><img src="/2020/06/13/searchAlg3/image-20200614173637774.png" alt="image-20200614173637774"></p>
+<p>如果h(n)是单调的，则算法扩展了节点n之后，就已经找到了到达节点n的最佳路径。即在选n进行扩展时就已经满足<em>g</em>(<em>n</em>)=g*(n)，就是从初始节点到当前节点的耗散值就是最好的了，不会再出现另外一个路径到节点n比现在更好，就不会再出现重复扩展已经扩展过的子节点。</p>
+<blockquote>
+<p>h单调性的性质：</p>
+<p>若<em>h</em>(<em>n</em>)是单调的，则由A<em>所扩展的节点序列其</em>f<em>值是非递减的。即</em>f(ni) ≤ f(nj)。</p>
+</blockquote>
+<h3 id="迭代加深Astar搜索（IDAstar算法）"><a href="#迭代加深Astar搜索（IDAstar算法）" class="headerlink" title="迭代加深Astar搜索（IDAstar算法）"></a>迭代加深Astar搜索（IDAstar算法）</h3><p><strong>算法介绍：</strong>IDAstar算法是一种减少Astar算法内存需求的改善算法</p>
+<p><strong>算法思想：</strong>回溯与A*的结合</p>
+<p><strong>算法简介（非严格地）：</strong></p>
+<ol>
+<li><p>设初始值<em>f</em>0；</p>
+</li>
+<li><p>集合<em>S</em>＝NULL；</p>
+</li>
+<li><p>用回溯法求解问题，如果节点<em>n</em>的<em>f</em>值大于<em>f</em>0，则将该节点放入集合<em>S</em>中，并回溯；</p>
+</li>
+<li><p>如果在3中找到了解，则结束；</p>
+</li>
+<li><p>如果3以失败结束，则<em>f</em>0＝<em>S</em>中节点的最小<em>f</em>值；</p>
+</li>
+<li><p>返回到2。</p>
+</li>
+</ol>
+<h3 id="其他算法"><a href="#其他算法" class="headerlink" title="其他算法"></a>其他算法</h3><ul>
+<li>随机搜索算法</li>
+<li>分支界限法<ul>
+<li>f(n)=g(n)</li>
+</ul>
+</li>
+<li>动态规划算法<ul>
+<li>如果对于任何<em>n</em>，当<em>h</em>(<em>n</em>)=0时，A*算法就成为了动态规划算法。</li>
+</ul>
+</li>
+<li>递归最佳优先搜索（RBFS）<ul>
+<li><img src="/2020/06/13/searchAlg3/image-20200614175540427.png" alt="image-20200614175540427"></li>
+</ul>
+</li>
+<li>内存受限Astar（MAstar）、简化的MAstar（SMAstar）</li>
+</ul>
+<blockquote>
+<p>参考：</p>
+<ol>
+<li><a href>资料</a></li>
+<li><a href="https://blog.csdn.net/weixin_39278265/article/details/80923249" target="_blank" rel="noopener">人工智能第三章（2）——有信息搜索（启发式搜索）</a></li>
+<li><a href="http://www.mamicode.com/info-detail-2486552.html" target="_blank" rel="noopener">启发式搜索（heuristic search）———A*算法</a></li>
+<li><a href="https://www.cnblogs.com/yanlingyin/archive/2012/01/15/2322640.html" target="_blank" rel="noopener">启发式搜索技术A*【译】</a></li>
+</ol>
+</blockquote>
+]]></content>
+      <categories>
+        <category>搜索算法笔记</category>
+      </categories>
+      <tags>
+        <tag>人工智能</tag>
+        <tag>搜索算法</tag>
+        <tag>启发式算法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>搜索算法2-状态和状态空间、盲目搜索</title>
     <url>/2020/06/13/searchAlg2/</url>
     <content><![CDATA[<h2 id="状态和状态空间"><a href="#状态和状态空间" class="headerlink" title="状态和状态空间"></a>状态和状态空间</h2><h3 id="1-基本概念"><a href="#1-基本概念" class="headerlink" title="1. 基本概念"></a>1. 基本概念</h3><h5 id="状态"><a href="#状态" class="headerlink" title="状态"></a>状态</h5><ul>
 <li>表示系统状态、事实等叙述性知识的一组变量或数组。</li>
@@ -110,7 +2947,8 @@
 <li>效率较低</li>
 </ul>
 </blockquote>
-<h5 id="算法流程："><a href="#算法流程：" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
+<p> <strong>算法流程</strong>：</p>
+<ol>
 <li>把起始节点放到OPEN表中(如果该起始节点为一目标节点，则求得一个解答)。</li>
 <li>如果OPEN是个空表，则没有解，失败退出；否则继续。</li>
 <li>把第一个节点(节点n)从OPEN表移出，并把它放入CLOSED的扩展节点表中。 扩展节点n。如果没有后继节点，则转向上述第(2)步。</li>
@@ -132,7 +2970,7 @@
 <li>空间复杂度很好，为O(bm)。所以DFS在AI的很多领域成为工作主力。</li>
 </ul>
 </blockquote>
-<h5 id="算法流程：-1"><a href="#算法流程：-1" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
+<h5 id="算法流程："><a href="#算法流程：" class="headerlink" title="算法流程："></a>算法流程：</h5><ol>
 <li>把起始节点放到OPEN表中(如果该起始节点为一目标节点，则求得一个解答)。</li>
 <li>如果OPEN是个空表，则没有解，失败退出；否则继续。</li>
 <li>把第一个节点(节点n)从OPEN表移出，并把它放入CLOSED的扩展节点表中。</li>
@@ -314,7 +3152,9 @@
   <entry>
     <title>decisionTree1</title>
     <url>/2020/06/11/decisionTree1/</url>
-    <content><![CDATA[]]></content>
+    <content><![CDATA[<p>决策树层次过多会导致过拟合</p>
+<p>问题：优先选择哪个属性进行分类</p>
+]]></content>
       <categories>
         <category>人工智能笔记</category>
       </categories>
@@ -324,7 +3164,7 @@
       </tags>
   </entry>
   <entry>
-    <title>搜索算法1</title>
+    <title>搜索算法1-搜索问题说明、回溯搜索算法</title>
     <url>/2020/06/10/searchAlg1/</url>
     <content><![CDATA[<h2 id="搜索问题说明"><a href="#搜索问题说明" class="headerlink" title="搜索问题说明"></a>搜索问题说明</h2><p>搜索问题是求解问题的一种方法。</p>
 <h3 id="1-搜索问题要解决的几个基本问题"><a href="#1-搜索问题要解决的几个基本问题" class="headerlink" title="1. 搜索问题要解决的几个基本问题"></a>1. 搜索问题要解决的几个基本问题</h3><ul>
